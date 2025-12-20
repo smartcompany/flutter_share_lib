@@ -1,5 +1,5 @@
 name: share_lib
-description: 재사용 가능한 Flutter 공유 기능 라이브러리. 카카오톡 공유, 기본 공유, 클립보드 복사 기능을 제공합니다.
+description: 재사용 가능한 Flutter 공유 기능 및 광고 서비스 라이브러리. 카카오톡 공유, 기본 공유, 클립보드 복사 기능과 서버 기반 광고 관리를 제공합니다.
 version: 1.0.0
 homepage: https://github.com/smartcompany/flutter_share_lib
 repository: https://github.com/smartcompany/flutter_share_lib
@@ -16,6 +16,9 @@ dependencies:
   kakao_flutter_sdk: ^1.9.7
   url_launcher: ^6.2.2
   path_provider: ^2.1.1
+  google_mobile_ads: ^5.1.0
+  shared_preferences: ^2.2.2
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
