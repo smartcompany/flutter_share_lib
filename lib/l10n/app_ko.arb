@@ -1,0 +1,83 @@
+{
+  "@@locale": "ko",
+  "loginTitle": "로그인",
+  "@loginTitle": {
+    "description": "로그인 화면 타이틀"
+  },
+  "kakaoLoginText": "카카오로 시작하기",
+  "@kakaoLoginText": {
+    "description": "카카오 로그인 버튼 텍스트"
+  },
+  "appleLoginText": "Apple로 시작하기",
+  "@appleLoginText": {
+    "description": "Apple 로그인 버튼 텍스트"
+  },
+  "googleLoginText": "Google로 시작하기",
+  "@googleLoginText": {
+    "description": "Google 로그인 버튼 텍스트"
+  },
+  "emailLabel": "이메일",
+  "@emailLabel": {
+    "description": "이메일 입력 필드 레이블"
+  },
+  "emailHint": "example@email.com",
+  "@emailHint": {
+    "description": "이메일 입력 필드 힌트"
+  },
+  "passwordLabel": "비밀번호",
+  "@passwordLabel": {
+    "description": "비밀번호 입력 필드 레이블"
+  },
+  "passwordHint": "비밀번호를 입력하세요",
+  "@passwordHint": {
+    "description": "비밀번호 입력 필드 힌트"
+  },
+  "emailLoginButtonText": "로그인",
+  "@emailLoginButtonText": {
+    "description": "이메일 로그인 버튼 텍스트"
+  },
+  "loginRequiredTitle": "로그인이 필요합니다",
+  "@loginRequiredTitle": {
+    "description": "로그인 필요 화면 제목"
+  },
+  "loginRequiredDescription": "로그인하여 계속 이용하세요",
+  "@loginRequiredDescription": {
+    "description": "로그인 필요 화면 설명"
+  },
+  "loginButtonText": "로그인하기",
+  "@loginButtonText": {
+    "description": "로그인하기 버튼 텍스트"
+  },
+  "orDividerText": "또는",
+  "@orDividerText": {
+    "description": "구분선 텍스트"
+  },
+  "emailPasswordRequired": "이메일과 비밀번호를 입력해주세요",
+  "@emailPasswordRequired": {
+    "description": "이메일과 비밀번호가 입력되지 않았을 때 에러 메시지"
+  },
+  "serverConnectionError": "서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
+  "@serverConnectionError": {
+    "description": "서버 연결 에러 메시지"
+  },
+  "invalidEmailPassword": "이메일 또는 비밀번호가 올바르지 않습니다.",
+  "@invalidEmailPassword": {
+    "description": "이메일 또는 비밀번호가 잘못되었을 때 에러 메시지"
+  },
+  "socialLoginRequired": "이 이메일은 소셜 로그인으로 가입되었습니다. 소셜 로그인을 사용해주세요.",
+  "@socialLoginRequired": {
+    "description": "소셜 로그인이 필요할 때 에러 메시지"
+  },
+  "appleLoginError": "Apple 로그인에 실패했습니다. 시뮬레이터 설정에서 Apple ID에 로그인되어 있는지 확인해주세요.",
+  "@appleLoginError": {
+    "description": "Apple 로그인 에러 메시지"
+  },
+  "kakaoSdkNotConfigured": "카카오 SDK가 설정되지 않았습니다. main.dart에서 카카오 앱 키를 설정해주세요.",
+  "@kakaoSdkNotConfigured": {
+    "description": "카카오 SDK 미설정 에러 메시지"
+  },
+  "pluginNotRegistered": "플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)",
+  "@pluginNotRegistered": {
+    "description": "플러그인 미등록 에러 메시지"
+  }
+}

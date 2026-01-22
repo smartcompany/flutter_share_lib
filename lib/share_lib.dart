@@ -32,3 +32,10 @@ library share_lib;
 
 export 'src/share_service.dart';
 export 'src/ad_service.dart';
+export 'src/auth/auth_config.dart';
+export 'src/auth/auth_service_interface.dart';
+export 'src/auth/auth_provider.dart';
+export 'src/auth/auth_screen.dart';
+export 'src/auth/login_required_screen.dart';
+export 'src/auth/auth_helper.dart';
+export 'src/auth/generated/auth_localizations.dart';

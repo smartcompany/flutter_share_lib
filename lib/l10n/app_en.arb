@@ -1,0 +1,23 @@
+{
+  "@@locale": "en",
+  "loginTitle": "Login",
+  "kakaoLoginText": "Continue with Kakao",
+  "appleLoginText": "Continue with Apple",
+  "googleLoginText": "Continue with Google",
+  "emailLabel": "Email",
+  "emailHint": "example@email.com",
+  "passwordLabel": "Password",
+  "passwordHint": "Enter your password",
+  "emailLoginButtonText": "Login",
+  "loginRequiredTitle": "Login Required",
+  "loginRequiredDescription": "Please login to continue",
+  "loginButtonText": "Login",
+  "orDividerText": "or",
+  "emailPasswordRequired": "Please enter your email and password",
+  "serverConnectionError": "Unable to connect to server. Please check if the server is running.",
+  "invalidEmailPassword": "Invalid email or password.",
+  "socialLoginRequired": "This email is registered with social login. Please use social login.",
+  "appleLoginError": "Apple login failed. Please check if you are logged in with Apple ID in simulator settings.",
+  "kakaoSdkNotConfigured": "Kakao SDK is not configured. Please set Kakao app keys in main.dart.",
+  "pluginNotRegistered": "Plugin is not registered. Please rebuild the app completely. (Stop and Run again)"
+}
