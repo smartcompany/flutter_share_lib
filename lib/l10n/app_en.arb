@@ -19,5 +19,59 @@
   "socialLoginRequired": "This email is registered with social login. Please use social login.",
   "appleLoginError": "Apple login failed. Please check if you are logged in with Apple ID in simulator settings.",
   "kakaoSdkNotConfigured": "Kakao SDK is not configured. Please set Kakao app keys in main.dart.",
-  "pluginNotRegistered": "Plugin is not registered. Please rebuild the app completely. (Stop and Run again)"
+  "pluginNotRegistered": "Plugin is not registered. Please rebuild the app completely. (Stop and Run again)",
+  "accountNotFoundMessage": "This email is not registered. Would you like to sign up?",
+  "wrongPassword": "Incorrect password.",
+  "emailAlreadyInUse": "This email is already in use.\n\n• If you signed up with email/password, please check your password.\n• If you signed up with social login (Google, Apple, Kakao), please use that method to log in.",
+  "invalidEmail": "Invalid email format.",
+  "loginFailed": "Login failed: {message}",
+  "@loginFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "weakPassword": "Password is too weak.",
+  "emailAlreadyInUseSignUp": "This email is already in use.",
+  "signUpFailed": "Sign up failed: {message}",
+  "@signUpFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "kakaoPluginNotRegistered": "Kakao login plugin is not registered. Please rebuild the app completely. (Stop and Run again)",
+  "kakaoSdkNotInitialized": "Kakao SDK is not initialized. Please check KakaoSdk.init in main.dart.",
+  "appleLoginNotAvailable": "Apple login is not available. iOS 13.0 or higher is required, and please test on a real device.",
+  "appleLoginTimeout": "Apple login timed out. Please try again.",
+  "appleLoginFailed": "Apple login failed. Please check if you are logged in with Apple ID in simulator settings.",
+  "applePluginNotRegistered": "Apple login plugin is not registered. Please rebuild the app completely. (Stop and Run again)",
+  "googleLoginTimeout": "Google login timed out. Please try again.",
+  "googleAuthTimeout": "Timed out while retrieving Google authentication information.",
+  "googleTokenError": "Unable to retrieve Google login token.",
+  "googlePluginNotRegistered": "Google login plugin is not registered. Please rebuild the app completely. (Stop and Run again)",
+  "firebaseLoginTimeout": "Firebase login timed out.",
+  "passwordResetEmailSent": "Password reset email has been sent. Please check your email.",
+  "passwordResetFailed": "Failed to send password reset email: {message}",
+  "@passwordResetFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "Passwords do not match.",
+  "signUpTitle": "Sign Up",
+  "passwordConfirmTitle": "Confirm Password",
+  "passwordConfirmMessage": "Please enter your password again.",
+  "passwordConfirmLabel": "Confirm Password",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "signUp": "Sign Up",
+  "send": "Send",
+  "passwordResetTitle": "Reset Password",
+  "passwordResetMessage": "Enter your email address and we'll send you a password reset link.",
+  "pleaseEnterEmail": "Please enter your email."
 }

@@ -6,6 +6,27 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'auth_service_interface.dart';
 
+/// 계정이 없을 때 발생하는 예외
+/// UI에서 회원가입 여부를 확인하기 위해 사용
+class AccountNotFoundException implements Exception {
+  final String message;
+  AccountNotFoundException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// 로컬라이징 키를 포함하는 예외
+/// UI에서 로컬라이징을 적용하기 위해 사용
+class LocalizedException implements Exception {
+  final String localizationKey;
+  final Map<String, String>? parameters;
+  LocalizedException(this.localizationKey, {this.parameters});
+
+  @override
+  String toString() => localizationKey;
+}
+
 /// 공통 인증 Provider
 /// Firebase Authentication을 사용하여 인증 상태를 관리합니다.
 class AuthProvider<T> with ChangeNotifier {
@@ -136,39 +157,127 @@ class AuthProvider<T> with ChangeNotifier {
     }
   }
 
-  /// Firebase 이메일/비밀번호 로그인
+  /// Firebase 이메일/비밀번호 로그인 (계정이 없으면 자동 회원가입)
   Future<void> loginWithEmail(String email, String password) async {
     _isLoading = true;
     notifyListeners();
     try {
+      debugPrint('🔵 [AuthProvider] 이메일 로그인 시작...');
+      debugPrint('🔵 [AuthProvider] 이메일: $email');
+      debugPrint(
+          '🔵 [AuthProvider] Firebase signInWithEmailAndPassword 호출 전...');
+
       final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
+      debugPrint(
+          '🔵 [AuthProvider] userCredential.user: ${userCredential.user != null ? "있음" : "없음"}');
 
       if (userCredential.user != null) {
+        debugPrint('🔵 [AuthProvider] Firebase ID 토큰 가져오기...');
         final idToken = await userCredential.user!.getIdToken();
+        debugPrint(
+            '🔵 [AuthProvider] idToken: ${idToken != null && idToken.isNotEmpty ? "있음" : "없음"}');
+
         if (idToken != null && idToken.isNotEmpty) {
           _authService.setToken(idToken);
-          _user = await _authService.getCurrentUser() as T?;
+          debugPrint('✅ [AuthProvider] 토큰 설정 완료');
+          try {
+            debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
+            _user = await _authService.getCurrentUser() as T?;
+            debugPrint('✅ [AuthProvider] 이메일 로그인 완료');
+            debugPrint(
+                '🔵 [AuthProvider] 사용자 정보: ${_user != null ? "있음" : "없음"}');
+          } catch (e) {
+            debugPrint('❌ [AuthProvider] getCurrentUser 에러: $e');
+            debugPrint('❌ [AuthProvider] 에러 타입: ${e.runtimeType}');
+            debugPrint('❌ [AuthProvider] 에러 문자열: ${e.toString()}');
+
+            // PROFILE_NOT_SETUP 예외인 경우 프로필 설정 필요
+            if (e.toString().contains('PROFILE_NOT_SETUP')) {
+              debugPrint('✅ [AuthProvider] 이메일 로그인 완료 (프로필 설정 필요)');
+              // 사용자 정보는 null로 유지 (프로필 설정 화면 표시를 위해)
+            } else {
+              debugPrint('❌ [AuthProvider] 사용자 정보 가져오기 실패: $e');
+              rethrow;
+            }
+          }
+        } else {
+          debugPrint('❌ [AuthProvider] idToken이 null이거나 비어있음');
         }
+      } else {
+        debugPrint('❌ [AuthProvider] userCredential.user가 null');
       }
     } on FirebaseAuthException catch (e) {
+      debugPrint('❌ [AuthProvider] FirebaseAuthException 발생');
+      debugPrint('❌ [AuthProvider] 에러 코드: ${e.code}');
+      debugPrint('❌ [AuthProvider] 에러 메시지: ${e.message}');
+      debugPrint('❌ [AuthProvider] 에러 스택: ${e.stackTrace}');
+
+      // 계정이 없으면 AccountNotFoundException을 던져서 UI에서 처리
       if (e.code == 'user-not-found') {
-        throw Exception('등록되지 않은 이메일입니다.');
+        debugPrint('🟡 [AuthProvider] 계정이 없음 - UI에서 회원가입 여부 확인 필요');
+        throw AccountNotFoundException('accountNotFoundMessage');
       } else if (e.code == 'wrong-password') {
-        throw Exception('비밀번호가 올바르지 않습니다.');
+        debugPrint('❌ [AuthProvider] 비밀번호가 올바르지 않음');
+        throw LocalizedException('wrongPassword');
+      } else if (e.code == 'invalid-credential') {
+        // invalid-credential은 비밀번호가 틀렸거나 계정이 없을 때 발생할 수 있음
+        // 계정 존재 여부 확인을 위해 회원가입 시도 (이미 존재하면 에러 발생)
+        debugPrint(
+            '🟡 [AuthProvider] invalid-credential 발생 - 계정 존재 여부 확인 중...');
+        try {
+          debugPrint('🟡 [AuthProvider] 계정 존재 여부 확인을 위해 회원가입 시도...');
+          await _firebaseAuth.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+          // 회원가입 성공 = 계정이 없었음
+          // 하지만 사용자 확인 없이 계정이 생성되었으므로 삭제해야 함
+          debugPrint('✅ [AuthProvider] 계정이 없음 확인 - 임시 계정 삭제 중...');
+          final tempUser = _firebaseAuth.currentUser;
+          if (tempUser != null) {
+            await tempUser.delete();
+            debugPrint('✅ [AuthProvider] 임시 계정 삭제 완료');
+          }
+          throw AccountNotFoundException('accountNotFoundMessage');
+        } on FirebaseAuthException catch (checkError) {
+          if (checkError.code == 'email-already-in-use') {
+            // 이메일이 이미 사용 중인 경우
+            // invalid-credential로 이미 실패했으므로, 소셜 로그인으로 가입한 가능성이 높음
+            // 하지만 이메일/비밀번호로 가입한 경우도 있을 수 있으므로 두 가지 모두 안내
+            debugPrint('❌ [AuthProvider] 이메일이 이미 사용 중');
+            throw LocalizedException('emailAlreadyInUse');
+          } else if (checkError.code == 'weak-password') {
+            // 비밀번호가 약함
+            debugPrint('❌ [AuthProvider] 비밀번호가 약함');
+            throw LocalizedException('wrongPassword');
+          } else {
+            // 다른 에러는 계정이 없을 가능성이 높음
+            debugPrint('❌ [AuthProvider] 계정 확인 중 에러: ${checkError.code}');
+            throw AccountNotFoundException('accountNotFoundMessage');
+          }
+        }
       } else if (e.code == 'invalid-email') {
-        throw Exception('이메일 형식이 올바르지 않습니다.');
+        debugPrint('❌ [AuthProvider] 이메일 형식이 올바르지 않음');
+        throw LocalizedException('invalidEmail');
       } else {
-        throw Exception('로그인에 실패했습니다: ${e.message}');
+        debugPrint('❌ [AuthProvider] 기타 FirebaseAuthException: ${e.code}');
+        throw LocalizedException('loginFailed',
+            parameters: {'message': e.message ?? ''});
       }
-    } catch (e) {
-      debugPrint('Email login error: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [AuthProvider] 이메일 로그인 일반 에러: $e');
+      debugPrint('❌ [AuthProvider] 에러 타입: ${e.runtimeType}');
+      debugPrint('❌ [AuthProvider] 에러 문자열: ${e.toString()}');
+      debugPrint('❌ [AuthProvider] 스택 트레이스: $stackTrace');
       rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
+      debugPrint('🟡 [AuthProvider] 이메일 로그인 완료 (finally)');
     }
   }
 
@@ -177,27 +286,43 @@ class AuthProvider<T> with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      debugPrint('🔵 [AuthProvider] 이메일 회원가입 시작...');
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      debugPrint('✅ [AuthProvider] Firebase 회원가입 성공');
 
       if (userCredential.user != null) {
         final idToken = await userCredential.user!.getIdToken();
         if (idToken != null && idToken.isNotEmpty) {
           _authService.setToken(idToken);
-          _user = await _authService.getCurrentUser() as T?;
+          try {
+            debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
+            _user = await _authService.getCurrentUser() as T?;
+            debugPrint('✅ [AuthProvider] 이메일 회원가입 완료');
+          } catch (e) {
+            // PROFILE_NOT_SETUP 예외인 경우 프로필 설정 필요
+            if (e.toString().contains('PROFILE_NOT_SETUP')) {
+              debugPrint('✅ [AuthProvider] 이메일 회원가입 완료 (프로필 설정 필요)');
+              // 사용자 정보는 null로 유지 (프로필 설정 화면 표시를 위해)
+            } else {
+              debugPrint('❌ [AuthProvider] 사용자 정보 가져오기 실패: $e');
+              rethrow;
+            }
+          }
         }
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        throw Exception('비밀번호가 너무 약합니다.');
+        throw LocalizedException('weakPassword');
       } else if (e.code == 'email-already-in-use') {
-        throw Exception('이미 사용 중인 이메일입니다.');
+        throw LocalizedException('emailAlreadyInUseSignUp');
       } else if (e.code == 'invalid-email') {
-        throw Exception('이메일 형식이 올바르지 않습니다.');
+        throw LocalizedException('invalidEmail');
       } else {
-        throw Exception('회원가입에 실패했습니다: ${e.message}');
+        throw LocalizedException('signUpFailed',
+            parameters: {'message': e.message ?? ''});
       }
     } catch (e) {
       debugPrint('Email signup error: $e');
@@ -282,17 +407,13 @@ class AuthProvider<T> with ChangeNotifier {
 
       if (e.toString().contains('channel-error') ||
           e.toString().contains('Unable to establish connection')) {
-        throw Exception(
-          '카카오 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)',
-        );
+        throw LocalizedException('kakaoPluginNotRegistered');
       }
 
       // 카카오 SDK 관련 에러 처리
       if (e.toString().contains('PlatformException') ||
           e.toString().contains('KakaoSdkNotInitialized')) {
-        throw Exception(
-          '카카오 SDK가 초기화되지 않았습니다. main.dart에서 KakaoSdk.init을 확인해주세요.',
-        );
+        throw LocalizedException('kakaoSdkNotInitialized');
       }
 
       rethrow;
@@ -315,8 +436,7 @@ class AuthProvider<T> with ChangeNotifier {
       debugPrint('🔵 [AuthProvider] 애플 로그인 사용 가능: $isAvailable');
 
       if (!isAvailable) {
-        throw Exception(
-            '애플 로그인을 사용할 수 없습니다. iOS 13.0 이상이 필요하며, 실제 기기에서 테스트해주세요.');
+        throw LocalizedException('appleLoginNotAvailable');
       }
 
       debugPrint(
@@ -331,7 +451,7 @@ class AuthProvider<T> with ChangeNotifier {
         const Duration(seconds: 30),
         onTimeout: () {
           debugPrint('❌ [AuthProvider] 애플 로그인 타임아웃 (30초)');
-          throw Exception('애플 로그인이 시간 초과되었습니다. 다시 시도해주세요.');
+          throw LocalizedException('appleLoginTimeout');
         },
       );
 
@@ -380,11 +500,9 @@ class AuthProvider<T> with ChangeNotifier {
       debugPrint('❌ [AuthProvider] 애플 로그인 에러: $e');
 
       if (e.code == AuthorizationErrorCode.unknown) {
-        throw Exception(
-          'Apple 로그인에 실패했습니다. 시뮬레이터 설정에서 Apple ID에 로그인되어 있는지 확인해주세요.',
-        );
+        throw LocalizedException('appleLoginFailed');
       }
-      throw Exception('Apple 로그인에 실패했습니다: ${e.message}');
+      throw LocalizedException('appleLoginFailed');
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -392,9 +510,7 @@ class AuthProvider<T> with ChangeNotifier {
 
       if (e.toString().contains('channel-error') ||
           e.toString().contains('Unable to establish connection')) {
-        throw Exception(
-          'Apple 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)',
-        );
+        throw LocalizedException('applePluginNotRegistered');
       }
       rethrow;
     } finally {
@@ -416,15 +532,16 @@ class AuthProvider<T> with ChangeNotifier {
       debugPrint('✅ [AuthProvider] GoogleSignIn 인스턴스 생성 완료');
 
       debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 전...');
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn().timeout(
+      final GoogleSignInAccount? googleUser =
+          await googleSignIn.signIn().timeout(
         const Duration(seconds: 30),
         onTimeout: () {
           debugPrint('❌ [AuthProvider] 구글 로그인 타임아웃 (30초)');
-          throw Exception('구글 로그인이 시간 초과되었습니다. 다시 시도해주세요.');
+          throw LocalizedException('googleLoginTimeout');
         },
       );
       debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 완료');
-      
+
       if (googleUser == null) {
         _isLoading = false;
         notifyListeners();
@@ -439,18 +556,19 @@ class AuthProvider<T> with ChangeNotifier {
         const Duration(seconds: 10),
         onTimeout: () {
           debugPrint('❌ [AuthProvider] 구글 인증 정보 가져오기 타임아웃 (10초)');
-          throw Exception('구글 인증 정보를 가져오는 중 시간 초과되었습니다.');
+          throw LocalizedException('googleAuthTimeout');
         },
       );
       debugPrint('✅ [AuthProvider] 구글 인증 정보 받음');
-      
+
       final idToken = googleAuth.idToken;
       final accessToken = googleAuth.accessToken;
       debugPrint('🔵 [AuthProvider] idToken: ${idToken != null ? "있음" : "없음"}');
-      debugPrint('🔵 [AuthProvider] accessToken: ${accessToken != null ? "있음" : "없음"}');
+      debugPrint(
+          '🔵 [AuthProvider] accessToken: ${accessToken != null ? "있음" : "없음"}');
 
       if (idToken == null) {
-        throw Exception('Google 로그인 토큰을 가져올 수 없습니다.');
+        throw LocalizedException('googleTokenError');
       }
 
       // Firebase에 Google 인증 정보로 로그인
@@ -462,13 +580,15 @@ class AuthProvider<T> with ChangeNotifier {
       debugPrint('✅ [AuthProvider] Firebase OAuth 크리덴셜 생성 완료');
 
       debugPrint('🔵 [AuthProvider] Firebase OAuth로 로그인...');
-      final userCredential = await _firebaseAuth.signInWithCredential(
+      final userCredential = await _firebaseAuth
+          .signInWithCredential(
         credential,
-      ).timeout(
+      )
+          .timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           debugPrint('❌ [AuthProvider] Firebase 로그인 타임아웃 (10초)');
-          throw Exception('Firebase 로그인이 시간 초과되었습니다.');
+          throw LocalizedException('firebaseLoginTimeout');
         },
       );
       debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
@@ -502,9 +622,7 @@ class AuthProvider<T> with ChangeNotifier {
       // 채널 연결 에러 처리
       if (e.toString().contains('channel-error') ||
           e.toString().contains('Unable to establish connection')) {
-        throw Exception(
-          'Google 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)',
-        );
+        throw LocalizedException('googlePluginNotRegistered');
       }
 
       rethrow;

@@ -1,0 +1,77 @@
+{
+  "@@locale": "zh",
+  "loginTitle": "登录",
+  "kakaoLoginText": "使用Kakao开始",
+  "appleLoginText": "使用Apple开始",
+  "googleLoginText": "使用Google开始",
+  "emailLabel": "电子邮件",
+  "emailHint": "example@email.com",
+  "passwordLabel": "密码",
+  "passwordHint": "请输入密码",
+  "emailLoginButtonText": "使用电子邮件开始",
+  "loginRequiredTitle": "需要登录",
+  "loginRequiredDescription": "请登录以继续",
+  "loginButtonText": "登录",
+  "orDividerText": "或",
+  "emailPasswordRequired": "请输入您的电子邮件和密码",
+  "serverConnectionError": "无法连接到服务器。请检查服务器是否正在运行。",
+  "invalidEmailPassword": "电子邮件或密码不正确。",
+  "socialLoginRequired": "此电子邮件已通过社交登录注册。请使用社交登录。",
+  "appleLoginError": "Apple登录失败。请检查模拟器设置中是否已登录Apple ID。",
+  "kakaoSdkNotConfigured": "Kakao SDK未配置。请在main.dart中设置Kakao应用密钥。",
+  "pluginNotRegistered": "插件未注册。请完全重新构建应用程序。（停止后再次运行）",
+  "accountNotFoundMessage": "此电子邮件未注册。您要注册吗？",
+  "wrongPassword": "密码不正确。",
+  "emailAlreadyInUse": "此电子邮件已被使用。\n\n• 如果您使用电子邮件/密码注册，请检查您的密码。\n• 如果您使用社交登录（Google、Apple、Kakao）注册，请使用该方法登录。",
+  "invalidEmail": "电子邮件格式不正确。",
+  "loginFailed": "登录失败: {message}",
+  "@loginFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "weakPassword": "密码太弱。",
+  "emailAlreadyInUseSignUp": "此电子邮件已被使用。",
+  "signUpFailed": "注册失败: {message}",
+  "@signUpFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "kakaoPluginNotRegistered": "Kakao登录插件未注册。请完全重新构建应用程序。（停止后再次运行）",
+  "kakaoSdkNotInitialized": "Kakao SDK未初始化。请在main.dart中检查KakaoSdk.init。",
+  "appleLoginNotAvailable": "无法使用Apple登录。需要iOS 13.0或更高版本，请在真实设备上测试。",
+  "appleLoginTimeout": "Apple登录超时。请重试。",
+  "appleLoginFailed": "Apple登录失败。请检查模拟器设置中是否已登录Apple ID。",
+  "applePluginNotRegistered": "Apple登录插件未注册。请完全重新构建应用程序。（停止后再次运行）",
+  "googleLoginTimeout": "Google登录超时。请重试。",
+  "googleAuthTimeout": "获取Google身份验证信息时超时。",
+  "googleTokenError": "无法获取Google登录令牌。",
+  "googlePluginNotRegistered": "Google登录插件未注册。请完全重新构建应用程序。（停止后再次运行）",
+  "firebaseLoginTimeout": "Firebase登录超时。",
+  "passwordResetEmailSent": "已发送密码重置电子邮件。请检查您的电子邮件。",
+  "passwordResetFailed": "发送密码重置电子邮件失败: {message}",
+  "@passwordResetFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "密码不匹配。",
+  "signUpTitle": "注册",
+  "passwordConfirmTitle": "确认密码",
+  "passwordConfirmMessage": "请再次输入密码。",
+  "passwordConfirmLabel": "确认密码",
+  "cancel": "取消",
+  "confirm": "确认",
+  "signUp": "注册",
+  "send": "发送",
+  "passwordResetTitle": "重置密码",
+  "passwordResetMessage": "输入您的电子邮件地址，我们将向您发送密码重置链接。",
+  "pleaseEnterEmail": "请输入您的电子邮件。"
+}

@@ -79,5 +79,152 @@
   "pluginNotRegistered": "플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)",
   "@pluginNotRegistered": {
     "description": "플러그인 미등록 에러 메시지"
+  },
+  "accountNotFoundMessage": "등록되지 않은 이메일입니다. 회원가입하시겠습니까?",
+  "@accountNotFoundMessage": {
+    "description": "계정이 없을 때 회원가입 안내 메시지"
+  },
+  "wrongPassword": "비밀번호가 올바르지 않습니다.",
+  "@wrongPassword": {
+    "description": "비밀번호가 틀렸을 때 에러 메시지"
+  },
+  "emailAlreadyInUse": "이 이메일은 이미 사용 중입니다.\n\n• 이메일/비밀번호로 가입하셨다면 비밀번호를 확인해주세요.\n• 소셜 로그인(구글, 애플, 카카오)으로 가입하셨다면 해당 방법으로 로그인해주세요.",
+  "@emailAlreadyInUse": {
+    "description": "이메일이 이미 사용 중일 때 안내 메시지"
+  },
+  "invalidEmail": "이메일 형식이 올바르지 않습니다.",
+  "@invalidEmail": {
+    "description": "이메일 형식이 잘못되었을 때 에러 메시지"
+  },
+  "loginFailed": "로그인에 실패했습니다: {message}",
+  "@loginFailed": {
+    "description": "로그인 실패 에러 메시지",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "weakPassword": "비밀번호가 너무 약합니다.",
+  "@weakPassword": {
+    "description": "비밀번호가 약할 때 에러 메시지"
+  },
+  "emailAlreadyInUseSignUp": "이미 사용 중인 이메일입니다.",
+  "@emailAlreadyInUseSignUp": {
+    "description": "회원가입 시 이메일이 이미 사용 중일 때 에러 메시지"
+  },
+  "signUpFailed": "회원가입에 실패했습니다: {message}",
+  "@signUpFailed": {
+    "description": "회원가입 실패 에러 메시지",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "kakaoPluginNotRegistered": "카카오 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)",
+  "@kakaoPluginNotRegistered": {
+    "description": "카카오 로그인 플러그인 미등록 에러 메시지"
+  },
+  "kakaoSdkNotInitialized": "카카오 SDK가 초기화되지 않았습니다. main.dart에서 KakaoSdk.init을 확인해주세요.",
+  "@kakaoSdkNotInitialized": {
+    "description": "카카오 SDK 미초기화 에러 메시지"
+  },
+  "appleLoginNotAvailable": "애플 로그인을 사용할 수 없습니다. iOS 13.0 이상이 필요하며, 실제 기기에서 테스트해주세요.",
+  "@appleLoginNotAvailable": {
+    "description": "애플 로그인 사용 불가 에러 메시지"
+  },
+  "appleLoginTimeout": "애플 로그인이 시간 초과되었습니다. 다시 시도해주세요.",
+  "@appleLoginTimeout": {
+    "description": "애플 로그인 타임아웃 에러 메시지"
+  },
+  "appleLoginFailed": "Apple 로그인에 실패했습니다. 시뮬레이터 설정에서 Apple ID에 로그인되어 있는지 확인해주세요.",
+  "@appleLoginFailed": {
+    "description": "애플 로그인 실패 에러 메시지"
+  },
+  "applePluginNotRegistered": "Apple 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)",
+  "@applePluginNotRegistered": {
+    "description": "애플 로그인 플러그인 미등록 에러 메시지"
+  },
+  "googleLoginTimeout": "구글 로그인이 시간 초과되었습니다. 다시 시도해주세요.",
+  "@googleLoginTimeout": {
+    "description": "구글 로그인 타임아웃 에러 메시지"
+  },
+  "googleAuthTimeout": "구글 인증 정보를 가져오는 중 시간 초과되었습니다.",
+  "@googleAuthTimeout": {
+    "description": "구글 인증 정보 가져오기 타임아웃 에러 메시지"
+  },
+  "googleTokenError": "Google 로그인 토큰을 가져올 수 없습니다.",
+  "@googleTokenError": {
+    "description": "구글 로그인 토큰 에러 메시지"
+  },
+  "googlePluginNotRegistered": "Google 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)",
+  "@googlePluginNotRegistered": {
+    "description": "구글 로그인 플러그인 미등록 에러 메시지"
+  },
+  "firebaseLoginTimeout": "Firebase 로그인이 시간 초과되었습니다.",
+  "@firebaseLoginTimeout": {
+    "description": "Firebase 로그인 타임아웃 에러 메시지"
+  },
+  "passwordResetEmailSent": "비밀번호 재설정 이메일을 전송했습니다. 이메일을 확인해주세요.",
+  "@passwordResetEmailSent": {
+    "description": "비밀번호 재설정 이메일 전송 성공 메시지"
+  },
+  "passwordResetFailed": "비밀번호 재설정 이메일 전송에 실패했습니다: {message}",
+  "@passwordResetFailed": {
+    "description": "비밀번호 재설정 이메일 전송 실패 에러 메시지",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "비밀번호가 일치하지 않습니다.",
+  "@passwordMismatch": {
+    "description": "비밀번호 확인 불일치 에러 메시지"
+  },
+  "signUpTitle": "회원가입",
+  "@signUpTitle": {
+    "description": "회원가입 다이얼로그 제목"
+  },
+  "passwordConfirmTitle": "비밀번호 확인",
+  "@passwordConfirmTitle": {
+    "description": "비밀번호 확인 다이얼로그 제목"
+  },
+  "passwordConfirmMessage": "비밀번호를 한 번 더 입력해주세요.",
+  "@passwordConfirmMessage": {
+    "description": "비밀번호 확인 다이얼로그 메시지"
+  },
+  "passwordConfirmLabel": "비밀번호 확인",
+  "@passwordConfirmLabel": {
+    "description": "비밀번호 확인 입력 필드 레이블"
+  },
+  "cancel": "취소",
+  "@cancel": {
+    "description": "취소 버튼 텍스트"
+  },
+  "confirm": "확인",
+  "@confirm": {
+    "description": "확인 버튼 텍스트"
+  },
+  "signUp": "회원가입",
+  "@signUp": {
+    "description": "회원가입 버튼 텍스트"
+  },
+  "send": "전송",
+  "@send": {
+    "description": "전송 버튼 텍스트"
+  },
+  "passwordResetTitle": "비밀번호 재설정",
+  "@passwordResetTitle": {
+    "description": "비밀번호 재설정 다이얼로그 제목"
+  },
+  "passwordResetMessage": "이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
+  "@passwordResetMessage": {
+    "description": "비밀번호 재설정 다이얼로그 메시지"
+  },
+  "pleaseEnterEmail": "이메일을 입력해주세요.",
+  "@pleaseEnterEmail": {
+    "description": "이메일 입력 요청 메시지"
   }
 }

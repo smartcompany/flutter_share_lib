@@ -7,6 +7,8 @@ import 'package:intl/intl.dart' as intl;
 
 import 'auth_localizations_en.dart';
 import 'auth_localizations_ko.dart';
+import 'auth_localizations_ja.dart';
+import 'auth_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +97,9 @@ abstract class AuthLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ko')
+    Locale('ko'),
+    Locale('ja'),
+    Locale('zh')
   ];
 
   /// 로그인 화면 타이틀
@@ -217,6 +221,213 @@ abstract class AuthLocalizations {
   /// In ko, this message translates to:
   /// **'플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)'**
   String get pluginNotRegistered;
+
+  /// 계정이 없을 때 회원가입 안내 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'등록되지 않은 이메일입니다. 회원가입하시겠습니까?'**
+  String get accountNotFoundMessage;
+
+  /// 비밀번호가 틀렸을 때 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호가 올바르지 않습니다.'**
+  String get wrongPassword;
+
+  /// 이메일이 이미 사용 중일 때 안내 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'이 이메일은 이미 사용 중입니다.\n\n• 이메일/비밀번호로 가입하셨다면 비밀번호를 확인해주세요.\n• 소셜 로그인(구글, 애플, 카카오)으로 가입하셨다면 해당 방법으로 로그인해주세요.'**
+  String get emailAlreadyInUse;
+
+  /// 이메일 형식이 잘못되었을 때 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 형식이 올바르지 않습니다.'**
+  String get invalidEmail;
+
+  /// 로그인 실패 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'로그인에 실패했습니다: {message}'**
+  ///
+  /// In en, this message translates to:
+  /// **'Login failed: {message}'**
+  String loginFailed(String message);
+
+  /// 비밀번호가 약할 때 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호가 너무 약합니다.'**
+  String get weakPassword;
+
+  /// 회원가입 시 이메일이 이미 사용 중일 때 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'이미 사용 중인 이메일입니다.'**
+  String get emailAlreadyInUseSignUp;
+
+  /// 회원가입 실패 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'회원가입에 실패했습니다: {message}'**
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up failed: {message}'**
+  String signUpFailed(String message);
+
+  /// 카카오 로그인 플러그인 미등록 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'카카오 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)'**
+  String get kakaoPluginNotRegistered;
+
+  /// 카카오 SDK 미초기화 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'카카오 SDK가 초기화되지 않았습니다. main.dart에서 KakaoSdk.init을 확인해주세요.'**
+  String get kakaoSdkNotInitialized;
+
+  /// 애플 로그인 사용 불가 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'애플 로그인을 사용할 수 없습니다. iOS 13.0 이상이 필요하며, 실제 기기에서 테스트해주세요.'**
+  String get appleLoginNotAvailable;
+
+  /// 애플 로그인 타임아웃 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'애플 로그인이 시간 초과되었습니다. 다시 시도해주세요.'**
+  String get appleLoginTimeout;
+
+  /// 애플 로그인 실패 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'Apple 로그인에 실패했습니다. 시뮬레이터 설정에서 Apple ID에 로그인되어 있는지 확인해주세요.'**
+  String get appleLoginFailed;
+
+  /// 애플 로그인 플러그인 미등록 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'Apple 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)'**
+  String get applePluginNotRegistered;
+
+  /// 구글 로그인 타임아웃 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 로그인이 시간 초과되었습니다. 다시 시도해주세요.'**
+  String get googleLoginTimeout;
+
+  /// 구글 인증 정보 가져오기 타임아웃 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 인증 정보를 가져오는 중 시간 초과되었습니다.'**
+  String get googleAuthTimeout;
+
+  /// 구글 로그인 토큰 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'Google 로그인 토큰을 가져올 수 없습니다.'**
+  String get googleTokenError;
+
+  /// 구글 로그인 플러그인 미등록 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'Google 로그인 플러그인이 등록되지 않았습니다. 앱을 완전히 재빌드해주세요. (Stop 후 다시 Run)'**
+  String get googlePluginNotRegistered;
+
+  /// Firebase 로그인 타임아웃 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'Firebase 로그인이 시간 초과되었습니다.'**
+  String get firebaseLoginTimeout;
+
+  /// 비밀번호 재설정 이메일 전송 성공 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 재설정 이메일을 전송했습니다. 이메일을 확인해주세요.'**
+  String get passwordResetEmailSent;
+
+  /// 비밀번호 재설정 이메일 전송 실패 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 재설정 이메일 전송에 실패했습니다: {message}'**
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send password reset email: {message}'**
+  String passwordResetFailed(String message);
+
+  /// 비밀번호 확인 불일치 에러 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호가 일치하지 않습니다.'**
+  String get passwordMismatch;
+
+  /// 회원가입 다이얼로그 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'회원가입'**
+  String get signUpTitle;
+
+  /// 비밀번호 확인 다이얼로그 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 확인'**
+  String get passwordConfirmTitle;
+
+  /// 비밀번호 확인 다이얼로그 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호를 한 번 더 입력해주세요.'**
+  String get passwordConfirmMessage;
+
+  /// 비밀번호 확인 입력 필드 레이블
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 확인'**
+  String get passwordConfirmLabel;
+
+  /// 취소 버튼 텍스트
+  ///
+  /// In ko, this message translates to:
+  /// **'취소'**
+  String get cancel;
+
+  /// 확인 버튼 텍스트
+  ///
+  /// In ko, this message translates to:
+  /// **'확인'**
+  String get confirm;
+
+  /// 회원가입 버튼 텍스트
+  ///
+  /// In ko, this message translates to:
+  /// **'회원가입'**
+  String get signUp;
+
+  /// 전송 버튼 텍스트
+  ///
+  /// In ko, this message translates to:
+  /// **'전송'**
+  String get send;
+
+  /// 비밀번호 재설정 다이얼로그 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 재설정'**
+  String get passwordResetTitle;
+
+  /// 비밀번호 재설정 다이얼로그 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.'**
+  String get passwordResetMessage;
+
+  /// 이메일 입력 요청 메시지
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일을 입력해주세요.'**
+  String get pleaseEnterEmail;
 }
 
 class _AuthLocalizationsDelegate
@@ -231,7 +442,7 @@ class _AuthLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ko'].contains(locale.languageCode);
+      <String>['en', 'ko', 'ja', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AuthLocalizationsDelegate old) => false;
@@ -244,6 +455,10 @@ AuthLocalizations lookupAuthLocalizations(Locale locale) {
       return AuthLocalizationsEn();
     case 'ko':
       return AuthLocalizationsKo();
+    case 'ja':
+      return AuthLocalizationsJa();
+    case 'zh':
+      return AuthLocalizationsZh();
   }
 
   throw FlutterError(

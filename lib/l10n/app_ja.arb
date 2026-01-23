@@ -1,0 +1,77 @@
+{
+  "@@locale": "ja",
+  "loginTitle": "ログイン",
+  "kakaoLoginText": "Kakaoで始める",
+  "appleLoginText": "Appleで始める",
+  "googleLoginText": "Googleで始める",
+  "emailLabel": "メールアドレス",
+  "emailHint": "example@email.com",
+  "passwordLabel": "パスワード",
+  "passwordHint": "パスワードを入力してください",
+  "emailLoginButtonText": "メールで始める",
+  "loginRequiredTitle": "ログインが必要です",
+  "loginRequiredDescription": "ログインして続ける",
+  "loginButtonText": "ログイン",
+  "orDividerText": "または",
+  "emailPasswordRequired": "メールアドレスとパスワードを入力してください",
+  "serverConnectionError": "サーバーに接続できません。サーバーが実行中か確認してください。",
+  "invalidEmailPassword": "メールアドレスまたはパスワードが正しくありません。",
+  "socialLoginRequired": "このメールアドレスはソーシャルログインで登録されています。ソーシャルログインを使用してください。",
+  "appleLoginError": "Appleログインに失敗しました。シミュレーター設定でApple IDにログインしているか確認してください。",
+  "kakaoSdkNotConfigured": "Kakao SDKが設定されていません。main.dartでKakaoアプリキーを設定してください。",
+  "pluginNotRegistered": "プラグインが登録されていません。アプリを完全に再ビルドしてください。（停止して再実行）",
+  "accountNotFoundMessage": "このメールアドレスは登録されていません。新規登録しますか？",
+  "wrongPassword": "パスワードが正しくありません。",
+  "emailAlreadyInUse": "このメールアドレスは既に使用されています。\n\n• メール/パスワードで登録した場合は、パスワードを確認してください。\n• ソーシャルログイン（Google、Apple、Kakao）で登録した場合は、その方法でログインしてください。",
+  "invalidEmail": "メールアドレスの形式が正しくありません。",
+  "loginFailed": "ログインに失敗しました: {message}",
+  "@loginFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "weakPassword": "パスワードが弱すぎます。",
+  "emailAlreadyInUseSignUp": "このメールアドレスは既に使用されています。",
+  "signUpFailed": "新規登録に失敗しました: {message}",
+  "@signUpFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "kakaoPluginNotRegistered": "Kakaoログインプラグインが登録されていません。アプリを完全に再ビルドしてください。（停止して再実行）",
+  "kakaoSdkNotInitialized": "Kakao SDKが初期化されていません。main.dartでKakaoSdk.initを確認してください。",
+  "appleLoginNotAvailable": "Appleログインを使用できません。iOS 13.0以上が必要で、実機でテストしてください。",
+  "appleLoginTimeout": "Appleログインがタイムアウトしました。もう一度お試しください。",
+  "appleLoginFailed": "Appleログインに失敗しました。シミュレーター設定でApple IDにログインしているか確認してください。",
+  "applePluginNotRegistered": "Appleログインプラグインが登録されていません。アプリを完全に再ビルドしてください。（停止して再実行）",
+  "googleLoginTimeout": "Googleログインがタイムアウトしました。もう一度お試しください。",
+  "googleAuthTimeout": "Google認証情報の取得中にタイムアウトしました。",
+  "googleTokenError": "Googleログイントークンを取得できません。",
+  "googlePluginNotRegistered": "Googleログインプラグインが登録されていません。アプリを完全に再ビルドしてください。（停止して再実行）",
+  "firebaseLoginTimeout": "Firebaseログインがタイムアウトしました。",
+  "passwordResetEmailSent": "パスワードリセットメールを送信しました。メールを確認してください。",
+  "passwordResetFailed": "パスワードリセットメールの送信に失敗しました: {message}",
+  "@passwordResetFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordMismatch": "パスワードが一致しません。",
+  "signUpTitle": "新規登録",
+  "passwordConfirmTitle": "パスワード確認",
+  "passwordConfirmMessage": "パスワードをもう一度入力してください。",
+  "passwordConfirmLabel": "パスワード確認",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "signUp": "新規登録",
+  "send": "送信",
+  "passwordResetTitle": "パスワードリセット",
+  "passwordResetMessage": "メールアドレスを入力すると、パスワードリセットリンクを送信します。",
+  "pleaseEnterEmail": "メールアドレスを入力してください。"
+}
