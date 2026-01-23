@@ -408,38 +408,68 @@ class AuthProvider<T> with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      debugPrint('Starting Google Sign-In...');
+      debugPrint('🔵 [AuthProvider] 구글 로그인 시작...');
+      debugPrint('🔵 [AuthProvider] GoogleSignIn 인스턴스 생성 중...');
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
       );
+      debugPrint('✅ [AuthProvider] GoogleSignIn 인스턴스 생성 완료');
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 전...');
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          debugPrint('❌ [AuthProvider] 구글 로그인 타임아웃 (30초)');
+          throw Exception('구글 로그인이 시간 초과되었습니다. 다시 시도해주세요.');
+        },
+      );
+      debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 완료');
+      
       if (googleUser == null) {
         _isLoading = false;
         notifyListeners();
-        debugPrint('Google Sign-In canceled by user');
+        debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨 (사용자 취소)');
         return; // 사용자가 취소한 경우
       }
 
-      debugPrint('Getting Google authentication...');
+      debugPrint('✅ [AuthProvider] 구글 사용자 정보 받음: ${googleUser.email}');
+      debugPrint('🔵 [AuthProvider] 구글 인증 정보 가져오기...');
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+          await googleUser.authentication.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('❌ [AuthProvider] 구글 인증 정보 가져오기 타임아웃 (10초)');
+          throw Exception('구글 인증 정보를 가져오는 중 시간 초과되었습니다.');
+        },
+      );
+      debugPrint('✅ [AuthProvider] 구글 인증 정보 받음');
+      
       final idToken = googleAuth.idToken;
       final accessToken = googleAuth.accessToken;
+      debugPrint('🔵 [AuthProvider] idToken: ${idToken != null ? "있음" : "없음"}');
+      debugPrint('🔵 [AuthProvider] accessToken: ${accessToken != null ? "있음" : "없음"}');
 
       if (idToken == null) {
         throw Exception('Google 로그인 토큰을 가져올 수 없습니다.');
       }
 
       // Firebase에 Google 인증 정보로 로그인
-      debugPrint('🔵 [AuthProvider] Firebase OAuth로 로그인...');
+      debugPrint('🔵 [AuthProvider] Firebase OAuth 크리덴셜 생성 중...');
       final credential = GoogleAuthProvider.credential(
         accessToken: accessToken,
         idToken: idToken,
       );
+      debugPrint('✅ [AuthProvider] Firebase OAuth 크리덴셜 생성 완료');
 
+      debugPrint('🔵 [AuthProvider] Firebase OAuth로 로그인...');
       final userCredential = await _firebaseAuth.signInWithCredential(
         credential,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          debugPrint('❌ [AuthProvider] Firebase 로그인 타임아웃 (10초)');
+          throw Exception('Firebase 로그인이 시간 초과되었습니다.');
+        },
       );
       debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
 
@@ -466,7 +496,8 @@ class AuthProvider<T> with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      debugPrint('Google login error: $e');
+      debugPrint('❌ [AuthProvider] 구글 로그인 에러: $e');
+      debugPrint('❌ [AuthProvider] 스택 트레이스: ${StackTrace.current}');
 
       // 채널 연결 에러 처리
       if (e.toString().contains('channel-error') ||

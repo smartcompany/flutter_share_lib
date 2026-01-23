@@ -339,12 +339,37 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                           borderColor: config.dividerColor,
                           isLoading: _isSocialLoading,
                           onPressed: () {
-                            final authProvider =
-                                context.read<AuthProvider<dynamic>>();
-                            _handleSocialLogin(
-                              () => authProvider.loginWithGoogle(),
-                              'Google',
-                            );
+                            try {
+                              debugPrint('🟡 [AuthScreen] 구글 로그인 버튼 클릭됨');
+                              debugPrint('🟡 [AuthScreen] context 확인 중...');
+                              final authProvider =
+                                  context.read<AuthProvider<T>>();
+                              debugPrint(
+                                  '🟡 [AuthScreen] AuthProvider 가져옴: ${authProvider.runtimeType}');
+                              debugPrint(
+                                  '🟡 [AuthScreen] _handleSocialLogin 호출 전...');
+                              _handleSocialLogin(
+                                () {
+                                  debugPrint(
+                                      '🟡 [AuthScreen] _handleSocialLogin 콜백 실행 시작');
+                                  return authProvider.loginWithGoogle();
+                                },
+                                'Google',
+                              );
+                              debugPrint(
+                                  '🟡 [AuthScreen] _handleSocialLogin 호출 완료');
+                            } catch (e, stackTrace) {
+                              debugPrint('❌ [AuthScreen] 버튼 핸들러 에러: $e');
+                              debugPrint('❌ [AuthScreen] 스택 트레이스: $stackTrace');
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('에러 발생: $e'),
+                                    duration: const Duration(seconds: 5),
+                                  ),
+                                );
+                              }
+                            }
                           },
                         ),
                     ],
