@@ -16,7 +16,11 @@ abstract class AuthServiceInterface {
   /// 사용자 정보 업데이트
   Future<dynamic> updateUser({
     String? nickname,
+    String? fullName,
+    String? gender,
+    String? bio,
     String? profileImageUrl,
+    String? backgroundImageUrl,
     List<String>? interests,
     String? kakaoId, // 카카오 로그인인 경우
   });

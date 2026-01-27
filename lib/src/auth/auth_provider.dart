@@ -112,6 +112,11 @@ class AuthProvider<T> with ChangeNotifier {
   /// 사용자 프로필 업데이트
   Future<void> updateProfile({
     String? nickname,
+    String? fullName,
+    String? gender,
+    String? bio,
+    String? profileImageUrl,
+    String? backgroundImageUrl,
     List<String>? interests,
     String? kakaoId, // 카카오 로그인인 경우 (명시적으로 전달하지 않으면 저장된 값 사용)
   }) async {
@@ -123,6 +128,11 @@ class AuthProvider<T> with ChangeNotifier {
 
       final updatedUser = await _authService.updateUser(
         nickname: nickname,
+        fullName: fullName,
+        gender: gender,
+        bio: bio,
+        profileImageUrl: profileImageUrl,
+        backgroundImageUrl: backgroundImageUrl,
         interests: interests,
         kakaoId: finalKakaoId,
       );
