@@ -111,7 +111,6 @@ class AuthProvider<T> with ChangeNotifier {
 
   /// 사용자 프로필 업데이트
   Future<void> updateProfile({
-    String? nickname,
     String? fullName,
     String? gender,
     String? bio,
@@ -127,7 +126,6 @@ class AuthProvider<T> with ChangeNotifier {
       final finalKakaoId = kakaoId ?? _kakaoId;
 
       final updatedUser = await _authService.updateUser(
-        nickname: nickname,
         fullName: fullName,
         gender: gender,
         bio: bio,
@@ -535,73 +533,65 @@ class AuthProvider<T> with ChangeNotifier {
     notifyListeners();
     try {
       debugPrint('🔵 [AuthProvider] 구글 로그인 시작...');
-      debugPrint('🔵 [AuthProvider] GoogleSignIn 인스턴스 생성 중...');
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-      );
-      debugPrint('✅ [AuthProvider] GoogleSignIn 인스턴스 생성 완료');
 
-      debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 전...');
-      final GoogleSignInAccount? googleUser =
-          await googleSignIn.signIn().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          debugPrint('❌ [AuthProvider] 구글 로그인 타임아웃 (30초)');
-          throw LocalizedException('googleLoginTimeout');
-        },
-      );
-      debugPrint('🔵 [AuthProvider] GoogleSignIn.signIn() 호출 완료');
+      UserCredential userCredential;
 
-      if (googleUser == null) {
-        _isLoading = false;
-        notifyListeners();
-        debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨 (사용자 취소)');
-        return; // 사용자가 취소한 경우
+      if (kIsWeb) {
+        // 웹: google_sign_in은 idToken을 반환하지 않음(Implicit Flow). Firebase signInWithPopup 사용
+        debugPrint('🔵 [AuthProvider] 웹 - signInWithPopup 사용');
+        final googleProvider = GoogleAuthProvider();
+        userCredential = await _firebaseAuth.signInWithPopup(googleProvider);
+        if (userCredential.user == null) {
+          _isLoading = false;
+          notifyListeners();
+          debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨');
+          return;
+        }
+        debugPrint('✅ [AuthProvider] Firebase signInWithPopup 성공');
+      } else {
+        // iOS/Android: google_sign_in 사용
+        final GoogleSignIn googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile'],
+        );
+
+        final GoogleSignInAccount? googleUser =
+            await googleSignIn.signIn().timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            debugPrint('❌ [AuthProvider] 구글 로그인 타임아웃 (30초)');
+            throw LocalizedException('googleLoginTimeout');
+          },
+        );
+
+        if (googleUser == null) {
+          _isLoading = false;
+          notifyListeners();
+          debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨 (사용자 취소)');
+          return;
+        }
+
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication.timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('❌ [AuthProvider] 구글 인증 정보 가져오기 타임아웃 (10초)');
+            throw LocalizedException('googleAuthTimeout');
+          },
+        );
+
+        final idToken = googleAuth.idToken;
+        if (idToken == null) {
+          throw LocalizedException('googleTokenError');
+        }
+
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: idToken,
+        );
+
+        userCredential = await _firebaseAuth.signInWithCredential(credential);
+        debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
       }
-
-      debugPrint('✅ [AuthProvider] 구글 사용자 정보 받음: ${googleUser.email}');
-      debugPrint('🔵 [AuthProvider] 구글 인증 정보 가져오기...');
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication.timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('❌ [AuthProvider] 구글 인증 정보 가져오기 타임아웃 (10초)');
-          throw LocalizedException('googleAuthTimeout');
-        },
-      );
-      debugPrint('✅ [AuthProvider] 구글 인증 정보 받음');
-
-      final idToken = googleAuth.idToken;
-      final accessToken = googleAuth.accessToken;
-      debugPrint('🔵 [AuthProvider] idToken: ${idToken != null ? "있음" : "없음"}');
-      debugPrint(
-          '🔵 [AuthProvider] accessToken: ${accessToken != null ? "있음" : "없음"}');
-
-      if (idToken == null) {
-        throw LocalizedException('googleTokenError');
-      }
-
-      // Firebase에 Google 인증 정보로 로그인
-      debugPrint('🔵 [AuthProvider] Firebase OAuth 크리덴셜 생성 중...');
-      final credential = GoogleAuthProvider.credential(
-        accessToken: accessToken,
-        idToken: idToken,
-      );
-      debugPrint('✅ [AuthProvider] Firebase OAuth 크리덴셜 생성 완료');
-
-      debugPrint('🔵 [AuthProvider] Firebase OAuth로 로그인...');
-      final userCredential = await _firebaseAuth
-          .signInWithCredential(
-        credential,
-      )
-          .timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          debugPrint('❌ [AuthProvider] Firebase 로그인 타임아웃 (10초)');
-          throw LocalizedException('firebaseLoginTimeout');
-        },
-      );
-      debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
 
       if (userCredential.user != null) {
         final firebaseIdToken = await userCredential.user!.getIdToken();
@@ -628,6 +618,14 @@ class AuthProvider<T> with ChangeNotifier {
       notifyListeners();
       debugPrint('❌ [AuthProvider] 구글 로그인 에러: $e');
       debugPrint('❌ [AuthProvider] 스택 트레이스: ${StackTrace.current}');
+
+      // 웹: 팝업 닫기 등 사용자 취소
+      if (e is FirebaseAuthException &&
+          (e.code == 'auth/popup-closed-by-user' ||
+              e.code == 'auth/cancelled-popup-request')) {
+        debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨 (팝업 닫힘)');
+        return;
+      }
 
       // 채널 연결 에러 처리
       if (e.toString().contains('channel-error') ||
