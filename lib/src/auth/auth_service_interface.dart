@@ -15,7 +15,6 @@ abstract class AuthServiceInterface {
 
   /// 사용자 정보 업데이트
   Future<dynamic> updateUser({
-    String? nickname,
     String? fullName,
     String? gender,
     String? bio,

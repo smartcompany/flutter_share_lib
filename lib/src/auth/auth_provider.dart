@@ -111,7 +111,6 @@ class AuthProvider<T> with ChangeNotifier {
 
   /// 사용자 프로필 업데이트
   Future<void> updateProfile({
-    String? nickname,
     String? fullName,
     String? gender,
     String? bio,
@@ -127,7 +126,6 @@ class AuthProvider<T> with ChangeNotifier {
       final finalKakaoId = kakaoId ?? _kakaoId;
 
       final updatedUser = await _authService.updateUser(
-        nickname: nickname,
         fullName: fullName,
         gender: gender,
         bio: bio,
