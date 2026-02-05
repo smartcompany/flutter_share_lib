@@ -33,7 +33,7 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get passwordHint => 'Enter your password';
 
   @override
-  String get emailLoginButtonText => 'Continue with Email';
+  String get emailLoginButtonText => 'Login';
 
   @override
   String get loginRequiredTitle => 'Login Required';
@@ -88,7 +88,9 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get invalidEmail => 'Invalid email format.';
 
   @override
-  String loginFailed(String message) => 'Login failed: $message';
+  String loginFailed(String message) {
+    return 'Login failed: $message';
+  }
 
   @override
   String get weakPassword => 'Password is too weak.';
@@ -97,7 +99,9 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get emailAlreadyInUseSignUp => 'This email is already in use.';
 
   @override
-  String signUpFailed(String message) => 'Sign up failed: $message';
+  String signUpFailed(String message) {
+    return 'Sign up failed: $message';
+  }
 
   @override
   String get kakaoPluginNotRegistered =>
@@ -144,8 +148,9 @@ class AuthLocalizationsEn extends AuthLocalizations {
       'Password reset email has been sent. Please check your email.';
 
   @override
-  String passwordResetFailed(String message) =>
-      'Failed to send password reset email: $message';
+  String passwordResetFailed(String message) {
+    return 'Failed to send password reset email: $message';
+  }
 
   @override
   String get passwordMismatch => 'Passwords do not match.';

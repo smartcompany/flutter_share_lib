@@ -51,8 +51,7 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get emailPasswordRequired => 'メールアドレスとパスワードを入力してください';
 
   @override
-  String get serverConnectionError =>
-      'サーバーに接続できません。サーバーが実行中か確認してください。';
+  String get serverConnectionError => 'サーバーに接続できません。サーバーが実行中か確認してください。';
 
   @override
   String get invalidEmailPassword => 'メールアドレスまたはパスワードが正しくありません。';
@@ -87,7 +86,9 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get invalidEmail => 'メールアドレスの形式が正しくありません。';
 
   @override
-  String loginFailed(String message) => 'ログインに失敗しました: $message';
+  String loginFailed(String message) {
+    return 'ログインに失敗しました: $message';
+  }
 
   @override
   String get weakPassword => 'パスワードが弱すぎます。';
@@ -96,7 +97,9 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get emailAlreadyInUseSignUp => 'このメールアドレスは既に使用されています。';
 
   @override
-  String signUpFailed(String message) => '新規登録に失敗しました: $message';
+  String signUpFailed(String message) {
+    return '新規登録に失敗しました: $message';
+  }
 
   @override
   String get kakaoPluginNotRegistered =>
@@ -141,8 +144,9 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get passwordResetEmailSent => 'パスワードリセットメールを送信しました。メールを確認してください。';
 
   @override
-  String passwordResetFailed(String message) =>
-      'パスワードリセットメールの送信に失敗しました: $message';
+  String passwordResetFailed(String message) {
+    return 'パスワードリセットメールの送信に失敗しました: $message';
+  }
 
   @override
   String get passwordMismatch => 'パスワードが一致しません。';
@@ -175,8 +179,7 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get passwordResetTitle => 'パスワードリセット';
 
   @override
-  String get passwordResetMessage =>
-      'メールアドレスを入力すると、パスワードリセットリンクを送信します。';
+  String get passwordResetMessage => 'メールアドレスを入力すると、パスワードリセットリンクを送信します。';
 
   @override
   String get pleaseEnterEmail => 'メールアドレスを入力してください。';
