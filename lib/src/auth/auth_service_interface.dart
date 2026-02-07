@@ -12,15 +12,4 @@ abstract class AuthServiceInterface {
   /// [accessToken] 카카오 액세스 토큰
   /// UID와 kakao_id를 반환합니다.
   Future<Map<String, String>> loginWithKakao(String accessToken);
-
-  /// 사용자 정보 업데이트
-  Future<dynamic> updateUser({
-    String? fullName,
-    String? gender,
-    String? bio,
-    String? profileImageUrl,
-    String? backgroundImageUrl,
-    List<String>? interests,
-    String? kakaoId, // 카카오 로그인인 경우
-  });
 }

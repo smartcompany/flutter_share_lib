@@ -53,6 +53,9 @@ class AuthProvider<T> with ChangeNotifier {
   /// 초기화 완료 여부
   bool get isInitialized => _isInitialized;
 
+  /// 카카오 로그인 시 저장된 kakao_id (프로필 설정 시 전달용)
+  String? get kakaoId => _kakaoId;
+
   AuthProvider({
     FirebaseAuth? firebaseAuth,
     required AuthServiceInterface authService,
@@ -109,55 +112,31 @@ class AuthProvider<T> with ChangeNotifier {
     }
   }
 
-  /// 사용자 프로필 업데이트
-  Future<void> updateProfile({
-    String? fullName,
-    String? gender,
-    String? bio,
-    String? profileImageUrl,
-    String? backgroundImageUrl,
-    List<String>? interests,
-    String? kakaoId, // 카카오 로그인인 경우 (명시적으로 전달하지 않으면 저장된 값 사용)
-  }) async {
+  /// 현재 사용자 정보 갱신 (앱에서 프로필 업데이트 후 호출)
+  void setUser(T? user) {
+    _user = user;
+    notifyListeners();
+  }
+
+  /// Firebase 커스텀 토큰으로 로그인 (카카오 신규 사용자 등)
+  /// API가 custom_token을 반환한 경우 앱에서 호출합니다.
+  Future<void> signInWithCustomToken(String customToken) async {
     _isLoading = true;
     notifyListeners();
     try {
-      // kakaoId가 명시적으로 전달되지 않았으면 저장된 값 사용
-      final finalKakaoId = kakaoId ?? _kakaoId;
-
-      final updatedUser = await _authService.updateUser(
-        fullName: fullName,
-        gender: gender,
-        bio: bio,
-        profileImageUrl: profileImageUrl,
-        backgroundImageUrl: backgroundImageUrl,
-        interests: interests,
-        kakaoId: finalKakaoId,
+      debugPrint('🔵 [AuthProvider] Firebase 커스텀 토큰으로 로그인...');
+      final userCredential = await _firebaseAuth.signInWithCustomToken(
+        customToken,
       );
+      debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
 
-      // 카카오 로그인이고 새 사용자인 경우 custom_token이 포함됨
-      if (updatedUser is Map && updatedUser['custom_token'] != null) {
-        final customToken = updatedUser['custom_token'] as String;
-        debugPrint('🔵 [AuthProvider] Firebase 커스텀 토큰으로 로그인...');
-
-        // Firebase 커스텀 토큰으로 로그인
-        final userCredential = await _firebaseAuth.signInWithCustomToken(
-          customToken,
-        );
-        debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
-
-        if (userCredential.user != null) {
-          final firebaseIdToken = await userCredential.user!.getIdToken();
-          if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
-            _authService.setToken(firebaseIdToken);
-            // 사용자 정보 다시 가져오기
-            _user = await _authService.getCurrentUser() as T?;
-          }
+      if (userCredential.user != null) {
+        final firebaseIdToken = await userCredential.user!.getIdToken();
+        if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
+          _authService.setToken(firebaseIdToken);
+          _user = await _authService.getCurrentUser() as T?;
         }
-      } else {
-        _user = updatedUser as T?;
       }
-
       notifyListeners();
     } finally {
       _isLoading = false;
