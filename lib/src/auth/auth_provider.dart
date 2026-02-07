@@ -533,14 +533,7 @@ class AuthProvider<T> with ChangeNotifier {
           scopes: ['email', 'profile'],
         );
 
-        final GoogleSignInAccount? googleUser =
-            await googleSignIn.signIn().timeout(
-          const Duration(seconds: 30),
-          onTimeout: () {
-            debugPrint('❌ [AuthProvider] 구글 로그인 타임아웃 (30초)');
-            throw LocalizedException('googleLoginTimeout');
-          },
-        );
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
         if (googleUser == null) {
           _isLoading = false;
@@ -550,13 +543,7 @@ class AuthProvider<T> with ChangeNotifier {
         }
 
         final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication.timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            debugPrint('❌ [AuthProvider] 구글 인증 정보 가져오기 타임아웃 (10초)');
-            throw LocalizedException('googleAuthTimeout');
-          },
-        );
+            await googleUser.authentication;
 
         final idToken = googleAuth.idToken;
         if (idToken == null) {

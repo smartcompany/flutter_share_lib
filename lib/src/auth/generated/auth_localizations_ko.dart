@@ -33,7 +33,7 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get passwordHint => '비밀번호를 입력하세요';
 
   @override
-  String get emailLoginButtonText => '이메일로 시작하기';
+  String get emailLoginButtonText => '로그인';
 
   @override
   String get loginRequiredTitle => '로그인이 필요합니다';
@@ -85,7 +85,9 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get invalidEmail => '이메일 형식이 올바르지 않습니다.';
 
   @override
-  String loginFailed(String message) => '로그인에 실패했습니다: $message';
+  String loginFailed(String message) {
+    return '로그인에 실패했습니다: $message';
+  }
 
   @override
   String get weakPassword => '비밀번호가 너무 약합니다.';
@@ -94,7 +96,9 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get emailAlreadyInUseSignUp => '이미 사용 중인 이메일입니다.';
 
   @override
-  String signUpFailed(String message) => '회원가입에 실패했습니다: $message';
+  String signUpFailed(String message) {
+    return '회원가입에 실패했습니다: $message';
+  }
 
   @override
   String get kakaoPluginNotRegistered =>
@@ -139,8 +143,9 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get passwordResetEmailSent => '비밀번호 재설정 이메일을 전송했습니다. 이메일을 확인해주세요.';
 
   @override
-  String passwordResetFailed(String message) =>
-      '비밀번호 재설정 이메일 전송에 실패했습니다: $message';
+  String passwordResetFailed(String message) {
+    return '비밀번호 재설정 이메일 전송에 실패했습니다: $message';
+  }
 
   @override
   String get passwordMismatch => '비밀번호가 일치하지 않습니다.';

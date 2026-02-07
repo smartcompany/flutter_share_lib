@@ -6,8 +6,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'auth_localizations_en.dart';
-import 'auth_localizations_ko.dart';
 import 'auth_localizations_ja.dart';
+import 'auth_localizations_ko.dart';
 import 'auth_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -97,8 +97,8 @@ abstract class AuthLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ko'),
     Locale('ja'),
+    Locale('ko'),
     Locale('zh')
   ];
 
@@ -250,9 +250,6 @@ abstract class AuthLocalizations {
   ///
   /// In ko, this message translates to:
   /// **'로그인에 실패했습니다: {message}'**
-  ///
-  /// In en, this message translates to:
-  /// **'Login failed: {message}'**
   String loginFailed(String message);
 
   /// 비밀번호가 약할 때 에러 메시지
@@ -271,9 +268,6 @@ abstract class AuthLocalizations {
   ///
   /// In ko, this message translates to:
   /// **'회원가입에 실패했습니다: {message}'**
-  ///
-  /// In en, this message translates to:
-  /// **'Sign up failed: {message}'**
   String signUpFailed(String message);
 
   /// 카카오 로그인 플러그인 미등록 에러 메시지
@@ -352,9 +346,6 @@ abstract class AuthLocalizations {
   ///
   /// In ko, this message translates to:
   /// **'비밀번호 재설정 이메일 전송에 실패했습니다: {message}'**
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to send password reset email: {message}'**
   String passwordResetFailed(String message);
 
   /// 비밀번호 확인 불일치 에러 메시지
@@ -442,7 +433,7 @@ class _AuthLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ko', 'ja', 'zh'].contains(locale.languageCode);
+      <String>['en', 'ja', 'ko', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AuthLocalizationsDelegate old) => false;
@@ -453,10 +444,10 @@ AuthLocalizations lookupAuthLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AuthLocalizationsEn();
-    case 'ko':
-      return AuthLocalizationsKo();
     case 'ja':
       return AuthLocalizationsJa();
+    case 'ko':
+      return AuthLocalizationsKo();
     case 'zh':
       return AuthLocalizationsZh();
   }

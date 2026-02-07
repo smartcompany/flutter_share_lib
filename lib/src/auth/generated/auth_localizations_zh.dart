@@ -60,16 +60,13 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get socialLoginRequired => '此电子邮件已通过社交登录注册。请使用社交登录。';
 
   @override
-  String get appleLoginError =>
-      'Apple登录失败。请检查模拟器设置中是否已登录Apple ID。';
+  String get appleLoginError => 'Apple登录失败。请检查模拟器设置中是否已登录Apple ID。';
 
   @override
-  String get kakaoSdkNotConfigured =>
-      'Kakao SDK未配置。请在main.dart中设置Kakao应用密钥。';
+  String get kakaoSdkNotConfigured => 'Kakao SDK未配置。请在main.dart中设置Kakao应用密钥。';
 
   @override
-  String get pluginNotRegistered =>
-      '插件未注册。请完全重新构建应用程序。（停止后再次运行）';
+  String get pluginNotRegistered => '插件未注册。请完全重新构建应用程序。（停止后再次运行）';
 
   @override
   String get accountNotFoundMessage => '此电子邮件未注册。您要注册吗？';
@@ -85,7 +82,9 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get invalidEmail => '电子邮件格式不正确。';
 
   @override
-  String loginFailed(String message) => '登录失败: $message';
+  String loginFailed(String message) {
+    return '登录失败: $message';
+  }
 
   @override
   String get weakPassword => '密码太弱。';
@@ -94,30 +93,28 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get emailAlreadyInUseSignUp => '此电子邮件已被使用。';
 
   @override
-  String signUpFailed(String message) => '注册失败: $message';
+  String signUpFailed(String message) {
+    return '注册失败: $message';
+  }
 
   @override
-  String get kakaoPluginNotRegistered =>
-      'Kakao登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
+  String get kakaoPluginNotRegistered => 'Kakao登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
 
   @override
   String get kakaoSdkNotInitialized =>
       'Kakao SDK未初始化。请在main.dart中检查KakaoSdk.init。';
 
   @override
-  String get appleLoginNotAvailable =>
-      '无法使用Apple登录。需要iOS 13.0或更高版本，请在真实设备上测试。';
+  String get appleLoginNotAvailable => '无法使用Apple登录。需要iOS 13.0或更高版本，请在真实设备上测试。';
 
   @override
   String get appleLoginTimeout => 'Apple登录超时。请重试。';
 
   @override
-  String get appleLoginFailed =>
-      'Apple登录失败。请检查模拟器设置中是否已登录Apple ID。';
+  String get appleLoginFailed => 'Apple登录失败。请检查模拟器设置中是否已登录Apple ID。';
 
   @override
-  String get applePluginNotRegistered =>
-      'Apple登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
+  String get applePluginNotRegistered => 'Apple登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
 
   @override
   String get googleLoginTimeout => 'Google登录超时。请重试。';
@@ -129,8 +126,7 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get googleTokenError => '无法获取Google登录令牌。';
 
   @override
-  String get googlePluginNotRegistered =>
-      'Google登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
+  String get googlePluginNotRegistered => 'Google登录插件未注册。请完全重新构建应用程序。（停止后再次运行）';
 
   @override
   String get firebaseLoginTimeout => 'Firebase登录超时。';
@@ -139,8 +135,9 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get passwordResetEmailSent => '已发送密码重置电子邮件。请检查您的电子邮件。';
 
   @override
-  String passwordResetFailed(String message) =>
-      '发送密码重置电子邮件失败: $message';
+  String passwordResetFailed(String message) {
+    return '发送密码重置电子邮件失败: $message';
+  }
 
   @override
   String get passwordMismatch => '密码不匹配。';
