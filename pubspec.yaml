@@ -37,6 +37,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+  # 앨범 피커 (그리드 왼쪽에 촬영 아이콘)
+  wechat_assets_picker: ^9.8.0
+  wechat_camera_picker: ^4.3.7
+  cross_file: ^0.3.5
 
 dev_dependencies:
   flutter_test:

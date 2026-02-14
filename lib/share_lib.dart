@@ -40,3 +40,7 @@ export 'src/auth/auth_screen.dart';
 export 'src/auth/login_required_screen.dart';
 export 'src/auth/auth_helper.dart';
 export 'src/auth/generated/auth_localizations.dart';
+
+// 이미지 피커 (share_lib_image_picker로 분리 import 가능)
+export 'src/image_picker/media_picker_service.dart';
+export 'src/image_picker/korean_camera_picker_text_delegate.dart';
