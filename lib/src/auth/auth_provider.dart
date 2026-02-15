@@ -64,6 +64,8 @@ class AuthProvider<T> with ChangeNotifier {
     // Firebase Auth 상태 변화 감지
     _firebaseAuth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
+        _isLoading = true;
+        notifyListeners();
         try {
           final idToken = await firebaseUser.getIdToken();
           if (idToken != null && idToken.isNotEmpty) {
@@ -73,6 +75,9 @@ class AuthProvider<T> with ChangeNotifier {
           }
         } catch (e) {
           debugPrint('Failed to get user info: $e');
+        } finally {
+          _isLoading = false;
+          notifyListeners();
         }
       } else {
         _user = null;
