@@ -41,6 +41,8 @@ dependencies:
   wechat_assets_picker: ^9.8.0
   wechat_camera_picker: ^4.3.7
   cross_file: ^0.3.5
+  # 이미지 압축 (Vercel 4.5MB 제한 등 대응)
+  flutter_image_compress: ^2.4.0
 
 dev_dependencies:
   flutter_test:
