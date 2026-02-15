@@ -311,35 +311,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
         return;
       }
 
-      final user = authProvider.user;
-      debugPrint('🟡 [AuthScreen] 사용자 정보: ${user != null ? "있음" : "없음"}');
-
-      // 프로필 설정 화면으로 이동 여부 확인
-      // user == null인 경우 (PROFILE_NOT_SETUP) 또는 user가 있지만 프로필 설정이 필요한 경우
-      debugPrint('🟡 [AuthScreen] 프로필 설정 화면 확인 중...');
-      if (user == null ||
-          (widget.config.shouldShowProfileSetup != null &&
-              widget.config.shouldShowProfileSetup!(user))) {
-        debugPrint('🟡 [AuthScreen] 프로필 설정 화면으로 이동 필요');
-        if (widget.config.profileSetupScreenBuilder != null) {
-          final profileScreen = widget.config.profileSetupScreenBuilder!(
-            context,
-          );
-          if (profileScreen != null) {
-            debugPrint('🟡 [AuthScreen] 프로필 설정 화면으로 이동...');
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => profileScreen),
-            );
-            return;
-          } else {
-            debugPrint('⚠️ [AuthScreen] profileSetupScreenBuilder가 null 반환');
-          }
-        } else {
-          debugPrint('⚠️ [AuthScreen] profileSetupScreenBuilder가 null');
-        }
-      } else {
-        debugPrint('✅ [AuthScreen] 프로필 설정 불필요');
-      }
+      debugPrint('🟡 [AuthScreen] 로그인 완료 (프로필 설정은 앱에서 처리)');
 
       if (mounted) {
         debugPrint('🟡 [AuthScreen] 로그인 화면 닫기...');
@@ -434,24 +406,6 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
             );
 
             if (!mounted) return;
-            final user = authProvider.user;
-
-            // 프로필 설정 화면으로 이동
-            if (user == null ||
-                (widget.config.shouldShowProfileSetup != null &&
-                    widget.config.shouldShowProfileSetup!(user))) {
-              if (widget.config.profileSetupScreenBuilder != null) {
-                final profileScreen = widget.config.profileSetupScreenBuilder!(
-                  context,
-                );
-                if (profileScreen != null && mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => profileScreen),
-                  );
-                  return;
-                }
-              }
-            }
 
             if (mounted) {
               Navigator.of(context).pop(true);
@@ -509,27 +463,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
           debugPrint('⚠️ [AuthScreen] 위젯이 dispose됨');
           return;
         }
-        debugPrint('🟡 [AuthScreen] 사용자 정보 확인 중...');
-        final authProvider = context.read<AuthProvider<T>>();
-        final user = authProvider.user;
-        debugPrint('🟡 [AuthScreen] 사용자: $user');
-
-        // 프로필 설정 화면으로 이동 여부 확인
-        if (user != null &&
-            widget.config.shouldShowProfileSetup != null &&
-            widget.config.shouldShowProfileSetup!(user)) {
-          if (widget.config.profileSetupScreenBuilder != null) {
-            final profileScreen = widget.config.profileSetupScreenBuilder!(
-              context,
-            );
-            if (profileScreen != null) {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => profileScreen),
-              );
-              return;
-            }
-          }
-        }
+        debugPrint('🟡 [AuthScreen] 로그인 완료 (프로필 설정은 앱에서 처리)');
 
         if (mounted) {
           Navigator.of(context).pop(true);
