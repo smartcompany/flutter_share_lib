@@ -44,10 +44,6 @@ dependencies:
   # 이미지 압축 (Vercel 4.5MB 제한 등 대응)
   flutter_image_compress: ^2.4.0
 
-dependency_overrides:
-  # iOS Simulator DOBJC_initializeApi 오류 수정 (objective_c 9.2.5+ 빌드 스크립트 수정)
-  objective_c: ^9.3.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
