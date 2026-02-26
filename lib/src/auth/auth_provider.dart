@@ -56,11 +56,15 @@ class AuthProvider<T> with ChangeNotifier {
   /// 카카오 로그인 시 저장된 kakao_id (프로필 설정 시 전달용)
   String? get kakaoId => _kakaoId;
 
+  final String? _googleServerClientId;
+
   AuthProvider({
     FirebaseAuth? firebaseAuth,
     required AuthServiceInterface authService,
+    String? googleServerClientId,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _authService = authService {
+        _authService = authService,
+        _googleServerClientId = googleServerClientId {
     // Firebase Auth 상태 변화 감지
     _firebaseAuth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
@@ -536,6 +540,7 @@ class AuthProvider<T> with ChangeNotifier {
         // iOS/Android: google_sign_in 사용
         final GoogleSignIn googleSignIn = GoogleSignIn(
           scopes: ['email', 'profile'],
+          serverClientId: _googleServerClientId,
         );
 
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
