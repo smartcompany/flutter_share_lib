@@ -1,11 +1,9 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:wechat_camera_picker/wechat_camera_picker.dart';
-
-import 'korean_camera_picker_text_delegate.dart';
 
 /// 앨범 그리드 + 왼쪽 첫 칸 촬영 아이콘 스타일의 미디어 피커 서비스
 ///
@@ -67,86 +65,263 @@ class MediaPickerService {
       return null;
     }
 
-    final List<AssetEntity>? result = await AssetPicker.pickAssets(
-      context,
-      pickerConfig: AssetPickerConfig(
-        maxAssets: maxCount,
-        selectedAssets: const [],
-        requestType: RequestType.image,
-        textDelegate: const KoreanAssetPickerTextDelegate(),
-        specialItemPosition: SpecialItemPosition.prepend,
-        specialItemBuilder: (
-          BuildContext context,
-          AssetPathEntity? path,
-          int length,
-        ) {
-          if (path?.isAll != true) return null;
-          return Semantics(
-            label: '촬영',
-            button: true,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () async {
-                Feedback.forTap(context);
-                final navigator = Navigator.maybeOf(context);
-                final AssetEntity? cameraResult = await CameraPicker.pickFromCamera(
-                  context,
-                  pickerConfig: CameraPickerConfig(
-                    enableRecording: false,
-                    textDelegate: const KoreanCameraPickerTextDelegate(),
-                  ),
-                );
-                if (cameraResult != null && navigator != null) {
-                  navigator.pop(<AssetEntity>[cameraResult]);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(28.0),
-                color: Theme.of(context).dividerColor,
-                child: const FittedBox(
-                  fit: BoxFit.fill,
-                  child: Icon(Icons.camera_enhance),
-                ),
-              ),
-            ),
-          );
-        },
+    final List<XFile>? files = await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _ImagePickerPage(
+          maxCount: maxCount,
+          compress: compress,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+          quality: quality,
+          compressFailureMessage: compressFailureMessage,
+        ),
       ),
     );
 
-    if (result == null || result.isEmpty) return null;
+    return files;
+  }
+}
 
+class _ImagePickerPage extends StatefulWidget {
+  const _ImagePickerPage({
+    required this.maxCount,
+    required this.compress,
+    required this.maxWidth,
+    required this.maxHeight,
+    required this.quality,
+    required this.compressFailureMessage,
+  });
+
+  final int maxCount;
+  final bool compress;
+  final int maxWidth;
+  final int maxHeight;
+  final int quality;
+  final String compressFailureMessage;
+
+  @override
+  State<_ImagePickerPage> createState() => _ImagePickerPageState();
+}
+
+class _ImagePickerPageState extends State<_ImagePickerPage> {
+  final List<AssetEntity> _assets = [];
+  final Set<AssetEntity> _selected = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssets();
+  }
+
+  Future<void> _loadAssets() async {
+    try {
+      final paths = await PhotoManager.getAssetPathList(
+        hasAll: true,
+        onlyAll: true,
+        type: RequestType.image,
+      );
+      if (paths.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      final recent = paths.first;
+      final assets = await recent.getAssetListRange(start: 0, end: 200);
+      setState(() {
+        _assets
+          ..clear()
+          ..addAll(assets);
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('❌ [MediaPickerService] 이미지 로드 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지를 불러오지 못했습니다')),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _onCameraTap() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.camera);
+      if (picked == null) return;
+
+      final dir = await getTemporaryDirectory();
+      final targetPath =
+          '${dir.path}/camera_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      String outPath = picked.path;
+      if (widget.compress) {
+        final compressed = await FlutterImageCompress.compressAndGetFile(
+          picked.path,
+          targetPath,
+          quality: widget.quality,
+          minWidth: widget.maxWidth,
+          minHeight: widget.maxHeight,
+        );
+        if (compressed == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(widget.compressFailureMessage)),
+            );
+          }
+          return;
+        }
+        outPath = compressed.path;
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(<XFile>[XFile(outPath)]);
+    } catch (e) {
+      debugPrint('❌ [MediaPickerService] 카메라 촬영 실패: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('카메라를 사용할 수 없습니다')),
+      );
+    }
+  }
+
+  void _onAssetTap(AssetEntity asset) {
+    setState(() {
+      if (_selected.contains(asset)) {
+        _selected.remove(asset);
+      } else {
+        if (_selected.length >= widget.maxCount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('최대 ${widget.maxCount}장까지 선택할 수 있습니다')),
+          );
+          return;
+        }
+        _selected.add(asset);
+      }
+    });
+  }
+
+  Future<void> _onConfirm() async {
+    if (_selected.isEmpty) {
+      Navigator.of(context).pop(<XFile>[]);
+      return;
+    }
     final dir = await getTemporaryDirectory();
     final List<XFile> files = [];
-    for (var i = 0; i < result.length; i++) {
-      final entity = result[i];
-      final file = await entity.file;
+    int index = 0;
+    for (final asset in _selected) {
+      final file = await asset.file;
       if (file == null) continue;
-
-      if (compress) {
+      if (widget.compress) {
         final targetPath =
-            '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
+            '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$index.jpg';
         final compressed = await FlutterImageCompress.compressAndGetFile(
           file.absolute.path,
           targetPath,
-          quality: quality,
-          minWidth: maxWidth,
-          minHeight: maxHeight,
+          quality: widget.quality,
+          minWidth: widget.maxWidth,
+          minHeight: widget.maxHeight,
         );
         if (compressed != null) {
           files.add(XFile(compressed.path));
         } else {
-          if (context.mounted) {
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(compressFailureMessage)),
+              SnackBar(content: Text(widget.compressFailureMessage)),
             );
           }
-          return null;
+          return;
         }
       } else {
         files.add(XFile(file.path));
       }
+      index++;
     }
-    return files;
+    if (!mounted) return;
+    Navigator.of(context).pop(files);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('사진 선택'),
+        actions: [
+          TextButton(
+            onPressed: _selected.isEmpty ? null : _onConfirm,
+            child: Text(
+              _selected.isEmpty
+                  ? '완료'
+                  : '완료 (${_selected.length}/${widget.maxCount})',
+              style: TextStyle(
+                color: _selected.isEmpty
+                    ? Theme.of(context).disabledColor
+                    : Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GridView.builder(
+              padding: const EdgeInsets.all(2),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+              ),
+              itemCount: _assets.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return GestureDetector(
+                    onTap: _onCameraTap,
+                    child: Container(
+                      color: Theme.of(context).dividerColor,
+                      child: const Center(
+                        child: Icon(Icons.camera_enhance, size: 32),
+                      ),
+                    ),
+                  );
+                }
+                final asset = _assets[index - 1];
+                final selected = _selected.contains(asset);
+                return GestureDetector(
+                  onTap: () => _onAssetTap(asset),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      AssetEntityImage(
+                        asset,
+                        isOriginal: false,
+                        thumbnailSize: const ThumbnailSize.square(300),
+                        fit: BoxFit.cover,
+                      ),
+                      if (selected)
+                        Container(
+                          color: Colors.black26,
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(
+                                Icons.check_circle,
+                                color:
+                                    Theme.of(context).colorScheme.primaryContainer,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
   }
 }
