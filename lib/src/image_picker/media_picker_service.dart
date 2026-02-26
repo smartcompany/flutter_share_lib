@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 
@@ -44,8 +43,22 @@ class MediaPickerService {
     int quality = 65,
     String compressFailureMessage = '이미지 압축 실패',
   }) async {
-    final ps = await PhotoManager.requestPermissionExtend();
-    if (!ps.isAuth) {
+    // 이미지만 선택하므로 image 타입만 요청. 기본값(common)이면 이미지+동영상 권한을 모두 요구해
+    // 사진만 허용한 경우에도 거부로 인식될 수 있음. hasAccess(authorized || limited)로 판단해
+    // "일부만 허용" 상태에서도 피커를 연다.
+    final ps = await PhotoManager.requestPermissionExtend(
+      requestOption: const PermissionRequestOption(
+        androidPermission: AndroidPermission(
+          type: RequestType.image,
+          mediaLocation: false,
+        ),
+      ),
+    );
+    debugPrint(
+      '🔵 [MediaPickerService] permission state: isAuth=${ps.isAuth}, '
+      'hasAccess=${ps.hasAccess}, isLimited=${ps.isLimited}',
+    );
+    if (!ps.hasAccess) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(permissionDeniedMessage)),
