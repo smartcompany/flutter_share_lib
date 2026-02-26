@@ -39,6 +39,7 @@ dependencies:
   intl: ^0.20.2
   # 이미지 선택/촬영 및 결과 파일 래핑
   image_picker: ^1.0.7
+  photo_manager: ^3.8.0
   cross_file: ^0.3.5
   # 이미지 압축 (Vercel 4.5MB 제한 등 대응)
   flutter_image_compress: ^2.4.0

@@ -4,6 +4,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'dart:typed_data' as typed_data;
 
 /// 앨범 그리드 + 왼쪽 첫 칸 촬영 아이콘 스타일의 미디어 피커 서비스
 ///
@@ -296,11 +297,9 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      AssetEntityImage(
-                        asset,
-                        isOriginal: false,
-                        thumbnailSize: const ThumbnailSize.square(300),
-                        fit: BoxFit.cover,
+                      _AssetThumbnail(
+                        asset: asset,
+                        size: 300,
                       ),
                       if (selected)
                         Container(
@@ -322,6 +321,34 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
                 );
               },
             ),
+    );
+  }
+}
+
+/// photo_manager만 사용해 썸네일 표시 (photo_manager_image_provider 미사용)
+class _AssetThumbnail extends StatelessWidget {
+  const _AssetThumbnail({required this.asset, required this.size});
+
+  final AssetEntity asset;
+  final int size;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<typed_data.Uint8List?>(
+      future: asset.thumbnailDataWithSize(ThumbnailSize.square(size)),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null || bytes.isEmpty) {
+          return Container(
+            color: Theme.of(context).dividerColor,
+            child: const Icon(Icons.image_not_supported),
+          );
+        }
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+        );
+      },
     );
   }
 }

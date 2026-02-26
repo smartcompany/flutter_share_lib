@@ -22,4 +22,3 @@ library share_lib_image_picker;
 
 export 'package:cross_file/cross_file.dart' show XFile;
 export 'src/image_picker/media_picker_service.dart';
-export 'src/image_picker/korean_camera_picker_text_delegate.dart';
