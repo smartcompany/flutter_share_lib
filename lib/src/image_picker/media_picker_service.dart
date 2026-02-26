@@ -280,12 +280,17 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
               itemCount: _assets.length + 1,
               itemBuilder: (context, index) {
                 if (index == 0) {
+                  final theme = Theme.of(context);
                   return GestureDetector(
                     onTap: _onCameraTap,
                     child: Container(
-                      color: Theme.of(context).dividerColor,
-                      child: const Center(
-                        child: Icon(Icons.camera_enhance, size: 32),
+                      color: theme.colorScheme.surface,
+                      child: Center(
+                        child: Icon(
+                          Icons.camera_enhance,
+                          size: 40,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                     ),
                   );
