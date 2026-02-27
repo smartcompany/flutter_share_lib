@@ -93,21 +93,19 @@ class MapService {
       ));
     }
 
-    // 애플맵 (iOS만)
-    if (latitude != null && longitude != null) {
-      final appleMapUrl = _buildAppleMapUrl(
-        locationName: locationName,
-        latitude: latitude,
-        longitude: longitude,
-      );
-      if (await canLaunchUrl(appleMapUrl)) {
-        apps.add(MapApp(
-          name: 'Apple 지도',
-          icon: Icons.map,
-          color: Colors.grey,
-          url: appleMapUrl,
-        ));
-      }
+    // 애플맵 (iOS 기본 지도 앱) - 좌표가 없어도 장소명으로 검색 가능
+    final appleMapUrl = _buildAppleMapUrl(
+      locationName: locationName,
+      latitude: latitude,
+      longitude: longitude,
+    );
+    if (await canLaunchUrl(appleMapUrl)) {
+      apps.add(MapApp(
+        name: 'Apple 지도',
+        icon: Icons.map,
+        color: Colors.grey,
+        url: appleMapUrl,
+      ));
     }
 
     return apps;
@@ -166,15 +164,21 @@ class MapService {
   }
 
   /// Apple 지도 URL 생성
+  ///
+  /// - 좌표가 있으면 ll(위경도)와 q(장소명)를 함께 전달
+  /// - 좌표가 없으면 장소명만으로 검색
   static Uri _buildAppleMapUrl({
     required String locationName,
-    required double latitude,
-    required double longitude,
+    double? latitude,
+    double? longitude,
   }) {
-    // iOS에서는 maps://, Android에서는 http://maps.apple.com 사용
-    return Uri.parse(
-      'maps://maps.apple.com/?q=$latitude,$longitude&name=${Uri.encodeComponent(locationName)}',
-    );
+    final encodedName = Uri.encodeComponent(locationName);
+    if (latitude != null && longitude != null) {
+      return Uri.parse(
+        'http://maps.apple.com/?ll=$latitude,$longitude&q=$encodedName',
+      );
+    }
+    return Uri.parse('http://maps.apple.com/?q=$encodedName');
   }
 }
 
