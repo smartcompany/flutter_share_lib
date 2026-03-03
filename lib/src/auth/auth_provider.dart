@@ -32,17 +32,14 @@ class LocalizedException implements Exception {
 class AuthProvider<T> with ChangeNotifier {
   final FirebaseAuth _firebaseAuth;
   final AuthServiceInterface _authService;
-  T? _user;
+  T? _userProfile;
   bool _isLoading = false;
   bool _isInitializing = false;
   bool _isInitialized = false;
   String? _kakaoId; // 카카오 로그인 시 저장
 
   /// 현재 사용자 정보
-  T? get user => _user;
-
-  /// 인증 여부
-  bool get isAuthenticated => _user != null;
+  T? get userProfile => _userProfile;
 
   /// 로딩 상태
   bool get isLoading => _isLoading;
@@ -55,6 +52,11 @@ class AuthProvider<T> with ChangeNotifier {
 
   /// 카카오 로그인 시 저장된 kakao_id (프로필 설정 시 전달용)
   String? get kakaoId => _kakaoId;
+
+  /// 로그인 여부. Firebase Auth의 currentUser가 있으면 true.
+  bool isLoggedIn() {
+    return _firebaseAuth.currentUser != null;
+  }
 
   final String? _googleServerClientId;
 
@@ -74,7 +76,7 @@ class AuthProvider<T> with ChangeNotifier {
           final idToken = await firebaseUser.getIdToken();
           if (idToken != null && idToken.isNotEmpty) {
             _authService.setToken(idToken);
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             notifyListeners();
           }
         } catch (e) {
@@ -84,7 +86,7 @@ class AuthProvider<T> with ChangeNotifier {
           notifyListeners();
         }
       } else {
-        _user = null;
+        _userProfile = null;
         _authService.setToken('');
         notifyListeners();
       }
@@ -105,7 +107,7 @@ class AuthProvider<T> with ChangeNotifier {
           final idToken = await firebaseUser.getIdToken();
           if (idToken != null && idToken.isNotEmpty) {
             _authService.setToken(idToken);
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             notifyListeners();
           }
         } catch (e) {
@@ -122,9 +124,17 @@ class AuthProvider<T> with ChangeNotifier {
   }
 
   /// 현재 사용자 정보 갱신 (앱에서 프로필 업데이트 후 호출)
-  void setUser(T? user) {
-    _user = user;
+  void setUserProfile(T? user) {
+    _userProfile = user;
     notifyListeners();
+  }
+
+  /// 프로필 설정 화면을 보여줘야 하는지 여부.
+  /// 로그인됐는데 프로필(userProfile)이 없으면 true.
+  bool needProfileSetup() {
+    if (!_isInitialized) return false;
+    if (isLoggedIn() == false) return false;
+    return _userProfile == null;
   }
 
   /// Firebase 커스텀 토큰으로 로그인 (카카오 신규 사용자 등)
@@ -143,7 +153,7 @@ class AuthProvider<T> with ChangeNotifier {
         final firebaseIdToken = await userCredential.user!.getIdToken();
         if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
           _authService.setToken(firebaseIdToken);
-          _user = await _authService.getCurrentUser() as T?;
+          _userProfile = await _authService.getCurrentUser() as T?;
         }
       }
       notifyListeners();
@@ -182,10 +192,10 @@ class AuthProvider<T> with ChangeNotifier {
           debugPrint('✅ [AuthProvider] 토큰 설정 완료');
           try {
             debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             debugPrint('✅ [AuthProvider] 이메일 로그인 완료');
             debugPrint(
-                '🔵 [AuthProvider] 사용자 정보: ${_user != null ? "있음" : "없음"}');
+                '🔵 [AuthProvider] 사용자 정보: ${_userProfile != null ? "있음" : "없음"}');
           } catch (e) {
             debugPrint('❌ [AuthProvider] getCurrentUser 에러: $e');
             debugPrint('❌ [AuthProvider] 에러 타입: ${e.runtimeType}');
@@ -295,7 +305,7 @@ class AuthProvider<T> with ChangeNotifier {
           _authService.setToken(idToken);
           try {
             debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             debugPrint('✅ [AuthProvider] 이메일 회원가입 완료');
           } catch (e) {
             // PROFILE_NOT_SETUP 예외인 경우 프로필 설정 필요
@@ -387,7 +397,7 @@ class AuthProvider<T> with ChangeNotifier {
           final firebaseIdToken = await userCredential.user!.getIdToken();
           if (firebaseIdToken != null && firebaseIdToken.isNotEmpty) {
             _authService.setToken(firebaseIdToken);
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             debugPrint('✅ [AuthProvider] 카카오 로그인 완료 (기존 사용자)');
           }
         }
@@ -476,7 +486,7 @@ class AuthProvider<T> with ChangeNotifier {
           _authService.setToken(idToken);
           try {
             debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             debugPrint('✅ [AuthProvider] 애플 로그인 완료');
           } catch (e) {
             // PROFILE_NOT_SETUP 예외인 경우 프로필 설정 필요
@@ -575,7 +585,7 @@ class AuthProvider<T> with ChangeNotifier {
           _authService.setToken(firebaseIdToken);
           try {
             debugPrint('🔵 [AuthProvider] 서버에서 사용자 정보 가져오기...');
-            _user = await _authService.getCurrentUser() as T?;
+            _userProfile = await _authService.getCurrentUser() as T?;
             debugPrint('✅ [AuthProvider] 구글 로그인 완료');
           } catch (e) {
             // PROFILE_NOT_SETUP 예외인 경우 프로필 설정 필요
@@ -637,7 +647,7 @@ class AuthProvider<T> with ChangeNotifier {
     // Firebase 로그아웃
     await _firebaseAuth.signOut();
 
-    _user = null;
+    _userProfile = null;
     _authService.setToken('');
     notifyListeners();
   }

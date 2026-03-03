@@ -16,8 +16,8 @@ class AuthHelper {
     Widget? Function(BuildContext context)? profileSetupScreenBuilder,
   }) async {
     // 이미 로그인되어 있고 개인정보도 있으면 통과
-    if (authProvider.isAuthenticated) {
-      final user = authProvider.user;
+    if (authProvider.isLoggedIn()) {
+      final user = authProvider.userProfile;
 
       // 프로필 설정 확인
       if (user != null &&
@@ -69,7 +69,7 @@ class AuthHelper {
 
     // 로그인 성공 후 개인정보 확인
     if (result == true && context.mounted) {
-      final user = authProvider.user;
+      final user = authProvider.userProfile;
       if (user != null &&
           config.shouldShowProfileSetup != null &&
           config.shouldShowProfileSetup!(user)) {
