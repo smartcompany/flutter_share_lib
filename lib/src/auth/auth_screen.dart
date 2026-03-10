@@ -470,6 +470,11 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
         }
       } catch (e) {
         if (!mounted) return;
+        // 사용자가 구글 계정 선택 화면에서 취소한 경우 → 로그인 화면은 유지, 에러 메시지 없음
+        if (e is LocalizedException &&
+            e.localizationKey == 'googleLoginCancelled') {
+          return;
+        }
         final localizations = widget.config.getLocalizations(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

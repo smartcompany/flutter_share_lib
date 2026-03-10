@@ -559,7 +559,7 @@ class AuthProvider<T> with ChangeNotifier {
           _isLoading = false;
           notifyListeners();
           debugPrint('⚠️ [AuthProvider] 구글 로그인 취소됨 (사용자 취소)');
-          return;
+          throw LocalizedException('googleLoginCancelled');
         }
 
         final GoogleSignInAuthentication googleAuth =
