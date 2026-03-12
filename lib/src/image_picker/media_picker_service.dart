@@ -203,6 +203,10 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           return;
         }
         _selected.add(asset);
+        // 1장만 선택하는 경우(프로필/배경 사진 등) 클릭 즉시 적용
+        if (widget.maxCount == 1) {
+          _onConfirm();
+        }
       }
     });
   }
