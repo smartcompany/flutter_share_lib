@@ -769,8 +769,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed:
-                            _isEmailLoading ? null : _handleEmailLogin,
+                        onPressed: _isEmailLoading ? null : _handleEmailLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: config.primaryColor,
                           foregroundColor: Colors.white,
