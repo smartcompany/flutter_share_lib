@@ -651,4 +651,25 @@ class AuthProvider<T> with ChangeNotifier {
     _authService.setToken('');
     notifyListeners();
   }
+
+  /// 현재 로그인 사용자의 Firebase uid (없으면 null)
+  String? currentUid() => _firebaseAuth.currentUser?.uid;
+
+  /// 현재 로그인 사용자의 Firebase ID 토큰 (없으면 null)
+  Future<String?> getIdToken({bool forceRefresh = false}) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return null;
+    return user.getIdToken(forceRefresh);
+  }
+
+  /// 계정 탈퇴(Firebase Auth 삭제) + 로컬 인증 상태 초기화
+  /// `requires-recent-login` 등 FirebaseAuthException을 그대로 전달합니다.
+  Future<void> deleteAccount() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return;
+    await user.delete();
+    _userProfile = null;
+    _authService.setToken('');
+    notifyListeners();
+  }
 }

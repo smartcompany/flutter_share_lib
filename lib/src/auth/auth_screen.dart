@@ -722,7 +722,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
-                      enabled: !_isEmailLoading && !_isSocialLoading,
+                      enabled: !_isEmailLoading,
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -762,16 +762,15 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                       ),
                       obscureText: true,
                       textInputAction: TextInputAction.done,
-                      enabled: !_isEmailLoading && !_isSocialLoading,
+                      enabled: !_isEmailLoading,
                       onSubmitted: (_) => _handleEmailLogin(),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (_isEmailLoading || _isSocialLoading)
-                            ? null
-                            : _handleEmailLogin,
+                        onPressed:
+                            _isEmailLoading ? null : _handleEmailLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: config.primaryColor,
                           foregroundColor: Colors.white,
@@ -805,10 +804,12 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                 ],
               ),
             ),
-            if (_isSocialLoading || _isEmailLoading)
+            // 소셜(OAuth) 중에는 OS 팝업이 알아서 딤 처리 — 여기서 덮으면 하단 버튼이
+            // 비활성 색으로 사라진 것처럼 보이고 이중 딤이 겹친다.
+            if (_isEmailLoading)
               Positioned.fill(
                 child: Container(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withOpacity(0.35),
                   child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
