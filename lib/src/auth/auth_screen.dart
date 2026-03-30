@@ -490,6 +490,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
   Widget build(BuildContext context) {
     final config = widget.config;
     final localizations = config.getLocalizations(context);
+    final isAnyLoading = _isEmailLoading || _isSocialLoading;
     return Scaffold(
       backgroundColor: config.backgroundColor,
       appBar: AppBar(
@@ -687,12 +688,17 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                     // 이메일 로그인
                     TextField(
                       controller: _emailController,
+                      cursorColor: Colors.black,
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: localizations.emailLabel,
                         hintText: localizations.emailHint,
+                        labelStyle: const TextStyle(color: Colors.black),
+                        hintStyle:
+                            TextStyle(color: Colors.black.withOpacity(0.55)),
                         prefixIcon: Icon(
                           Icons.email_outlined,
-                          color: config.textSecondaryColor,
+                          color: Colors.black,
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -727,12 +733,17 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                     const SizedBox(height: 16),
                     TextField(
                       controller: _passwordController,
+                      cursorColor: Colors.black,
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: localizations.passwordLabel,
                         hintText: localizations.passwordHint,
+                        labelStyle: const TextStyle(color: Colors.black),
+                        hintStyle:
+                            TextStyle(color: Colors.black.withOpacity(0.55)),
                         prefixIcon: Icon(
                           Icons.lock_outlined,
-                          color: config.textSecondaryColor,
+                          color: Colors.black,
                         ),
                         filled: true,
                         fillColor: Colors.white,
@@ -779,24 +790,13 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                           ),
                           elevation: 0,
                         ),
-                        child: _isEmailLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                localizations.emailLoginButtonText,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        child: Text(
+                          localizations.emailLoginButtonText,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -805,7 +805,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
             ),
             // 소셜(OAuth) 중에는 OS 팝업이 알아서 딤 처리 — 여기서 덮으면 하단 버튼이
             // 비활성 색으로 사라진 것처럼 보이고 이중 딤이 겹친다.
-            if (_isEmailLoading)
+            if (isAnyLoading)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withOpacity(0.35),
