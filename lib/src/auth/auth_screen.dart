@@ -23,9 +23,42 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
   final _passwordController = TextEditingController();
   bool _isSocialLoading = false;
   bool _isEmailLoading = false;
+  OverlayEntry? _loadingOverlayEntry;
+  bool _isOverlayShown = false;
+
+  void _setLoadingOverlay(bool show) {
+    if (!mounted) return;
+    if (show) {
+      if (_loadingOverlayEntry != null) return;
+      _loadingOverlayEntry = OverlayEntry(
+        builder: (context) => IgnorePointer(
+          child: SizedBox.expand(
+            child: Container(
+              color: Colors.black.withOpacity(0.35),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ),
+        ),
+      );
+      final overlay = Overlay.of(context);
+      overlay?.insert(_loadingOverlayEntry!);
+      _isOverlayShown = true;
+      return;
+    }
+
+    if (!show && _loadingOverlayEntry != null) {
+      _loadingOverlayEntry!.remove();
+      _loadingOverlayEntry = null;
+      _isOverlayShown = false;
+    }
+  }
 
   @override
   void dispose() {
+    _loadingOverlayEntry?.remove();
+    _loadingOverlayEntry = null;
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -491,6 +524,12 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
     final config = widget.config;
     final localizations = config.getLocalizations(context);
     final isAnyLoading = _isEmailLoading || _isSocialLoading;
+    if (isAnyLoading != _isOverlayShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setLoadingOverlay(isAnyLoading);
+      });
+      _isOverlayShown = isAnyLoading;
+    }
     return Scaffold(
       backgroundColor: config.backgroundColor,
       appBar: AppBar(
@@ -803,15 +842,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                 ],
               ),
             ),
-            // 소셜(OAuth) 중에는 OS 팝업이 알아서 딤 처리 — 여기서 덮으면 하단 버튼이
-            // 비활성 색으로 사라진 것처럼 보이고 이중 딤이 겹친다.
-            if (isAnyLoading)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.35),
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-              ),
+            // 로딩 딤은 OverlayEntry로 처리 (AppBar/하단까지 전 영역 덮기)
           ],
         ),
       ),
