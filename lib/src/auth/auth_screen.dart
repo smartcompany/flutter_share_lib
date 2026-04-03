@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
+    show isKakaoTalkInstalled;
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'auth_config.dart';
@@ -25,6 +28,32 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
   bool _isEmailLoading = false;
   OverlayEntry? _loadingOverlayEntry;
   bool _isOverlayShown = false;
+
+  /// null: 확인 전 · true: 카카오톡 설치(또는 웹) · false: 미설치 → 버튼 숨김
+  bool? _kakaoTalkInstalled;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkKakaoTalkInstalled();
+  }
+
+  Future<void> _checkKakaoTalkInstalled() async {
+    if (!widget.config.enableKakaoLogin) {
+      if (mounted) setState(() => _kakaoTalkInstalled = false);
+      return;
+    }
+    if (kIsWeb) {
+      if (mounted) setState(() => _kakaoTalkInstalled = true);
+      return;
+    }
+    try {
+      final installed = await isKakaoTalkInstalled();
+      if (mounted) setState(() => _kakaoTalkInstalled = installed);
+    } catch (_) {
+      if (mounted) setState(() => _kakaoTalkInstalled = false);
+    }
+  }
 
   void _setLoadingOverlay(bool show) {
     if (!mounted) return;
@@ -350,10 +379,15 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
         debugPrint('🟡 [AuthScreen] 로그인 화면 닫기...');
         Navigator.of(context).pop(true);
       }
-    } on AccountNotFoundException catch (e) {
+    } on AccountNotFoundException catch (_) {
       // 계정이 없는 경우 회원가입 여부 확인 다이얼로그 표시
       debugPrint('🟡 [AuthScreen] 계정이 없음 - 회원가입 여부 확인 다이얼로그 표시');
       if (!mounted) return;
+
+      // 다이얼로그가 뜨는 동안은 전역 로딩(dim + 프로그레스) 없이 표시
+      setState(() {
+        _isEmailLoading = false;
+      });
 
       final localizations = widget.config.getLocalizations(context);
       final shouldSignUp = await showDialog<bool>(
@@ -430,7 +464,10 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
             return;
           }
 
-          // 회원가입 진행
+          // 회원가입 API 호출 시에만 로딩 표시 (앞선 확인 팝업들은 dim 없음)
+          setState(() {
+            _isEmailLoading = true;
+          });
           try {
             final authProvider = context.read<AuthProvider<T>>();
             await authProvider.signUpWithEmail(
@@ -452,6 +489,12 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                 duration: const Duration(seconds: 4),
               ),
             );
+          } finally {
+            if (mounted) {
+              setState(() {
+                _isEmailLoading = false;
+              });
+            }
           }
         }
       }
@@ -522,6 +565,8 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
   @override
   Widget build(BuildContext context) {
     final config = widget.config;
+    final showKakaoLogin =
+        config.enableKakaoLogin && (_kakaoTalkInstalled == true);
     final localizations = config.getLocalizations(context);
     final isAnyLoading = _isEmailLoading || _isSocialLoading;
     if (isAnyLoading != _isOverlayShown) {
@@ -567,8 +612,8 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                   // 소셜 로그인 버튼들
                   Column(
                     children: [
-                      // 카카오 로그인
-                      if (config.enableKakaoLogin)
+                      // 카카오 로그인 (네이티브: 카카오톡 설치 시에만)
+                      if (showKakaoLogin)
                         _SocialLoginButton(
                           icon: '🟡',
                           text: localizations.kakaoLoginText,
@@ -609,7 +654,7 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                             }
                           },
                         ),
-                      if (config.enableKakaoLogin) const SizedBox(height: 12),
+                      if (showKakaoLogin) const SizedBox(height: 12),
 
                       // 애플 로그인 (iOS만)
                       if (config.enableAppleLogin &&
