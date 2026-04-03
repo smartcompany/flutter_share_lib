@@ -21,6 +21,7 @@
 /// ```
 library share_lib_auth;
 
+export 'src/auth/apple_name_prefs.dart';
 export 'src/auth/auth_config.dart';
 export 'src/auth/auth_service_interface.dart';
 export 'src/auth/auth_provider.dart';

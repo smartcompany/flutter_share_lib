@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'apple_name_prefs.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:kakao_flutter_sdk_auth/kakao_flutter_sdk_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -466,6 +469,14 @@ class AuthProvider<T> with ChangeNotifier {
           '🔵 [AuthProvider] identityToken: ${credential.identityToken != null ? "있음" : "없음"}');
       debugPrint(
           '🔵 [AuthProvider] authorizationCode: ${credential.authorizationCode != null ? "있음" : "없음"}');
+      final gn = credential.givenName;
+      final fn = credential.familyName;
+      debugPrint(
+        '🔵 [AuthProvider] Apple 이름(givenName): ${gn == null ? "null" : (gn.isEmpty ? "(빈 문자열)" : gn)}',
+      );
+      debugPrint(
+        '🔵 [AuthProvider] Apple 이름(familyName): ${fn == null ? "null" : (fn.isEmpty ? "(빈 문자열)" : fn)}',
+      );
 
       debugPrint('🔵 [AuthProvider] Firebase OAuth 크리덴셜 생성 중...');
       final oauthCredential = OAuthProvider("apple.com").credential(
@@ -481,7 +492,65 @@ class AuthProvider<T> with ChangeNotifier {
       debugPrint('✅ [AuthProvider] Firebase 로그인 성공');
 
       if (userCredential.user != null) {
-        final idToken = await userCredential.user!.getIdToken();
+        // App Store Guideline 4: Apple이 준 성·이름을 Firebase `displayName`에 반영.
+        // Apple은 최초 로그인에만 givenName/familyName을 주고, 이후 로그인에서는 null →
+        // SharedPreferences(JSON)에 저장한 성·이름을 병합·재사용합니다.
+        // UI 표시는 `joinAppleFamilyGivenForDisplay`와 동일 규칙(한글/비한글).
+        final user = userCredential.user!;
+        final prefs = await SharedPreferences.getInstance();
+        final existing = readAppleNamePartsMap(prefs) ?? <String, String>{};
+        final familyIn = credential.familyName?.trim();
+        final givenIn = credential.givenName?.trim();
+        final mergedFamily = (familyIn != null && familyIn.isNotEmpty)
+            ? familyIn
+            : (existing['familyName'] ?? '');
+        final mergedGiven = (givenIn != null && givenIn.isNotEmpty)
+            ? givenIn
+            : (existing['givenName'] ?? '');
+
+        final partsMap = <String, String>{};
+        if (mergedFamily.isNotEmpty) partsMap['familyName'] = mergedFamily;
+        if (mergedGiven.isNotEmpty) partsMap['givenName'] = mergedGiven;
+        if (partsMap.isNotEmpty) {
+          await writeAppleNamePartsMap(prefs, partsMap);
+          debugPrint(
+            '🔵 [AuthProvider] Apple 성·이름 SharedPreferences 저장: $partsMap',
+          );
+        }
+
+        var displayForFirebase =
+            joinAppleFamilyGivenForDisplay(partsMap['familyName'], partsMap['givenName']);
+        if (displayForFirebase.isEmpty) {
+          displayForFirebase = displayNameFromApplePrefs(prefs);
+          if (displayForFirebase.isNotEmpty) {
+            debugPrint(
+              '🔵 [AuthProvider] Apple 크리덴셜에 성·이름 없음 → 캐시/레거시로 표시 문자열 복원: '
+              '$displayForFirebase',
+            );
+          } else {
+            debugPrint(
+              '🔵 [AuthProvider] Apple 성·이름 없음 · 캐시도 없음 → Firebase displayName 유지',
+            );
+          }
+        } else {
+          debugPrint(
+            '🔵 [AuthProvider] Apple 표시 문자열(성+이름, 공백 없음): $displayForFirebase',
+          );
+        }
+
+        if (displayForFirebase.isNotEmpty) {
+          final current = user.displayName;
+          debugPrint(
+            '🔵 [AuthProvider] Firebase displayName(갱신 전): '
+            '${current == null || current.trim().isEmpty ? "(없음)" : current}',
+          );
+          await user.updateDisplayName(displayForFirebase);
+          debugPrint(
+            '✅ [AuthProvider] Firebase updateDisplayName 적용: $displayForFirebase',
+          );
+        }
+
+        final idToken = await user.getIdToken();
         if (idToken != null && idToken.isNotEmpty) {
           _authService.setToken(idToken);
           try {
@@ -647,27 +716,6 @@ class AuthProvider<T> with ChangeNotifier {
     // Firebase 로그아웃
     await _firebaseAuth.signOut();
 
-    _userProfile = null;
-    _authService.setToken('');
-    notifyListeners();
-  }
-
-  /// 현재 로그인 사용자의 Firebase uid (없으면 null)
-  String? currentUid() => _firebaseAuth.currentUser?.uid;
-
-  /// 현재 로그인 사용자의 Firebase ID 토큰 (없으면 null)
-  Future<String?> getIdToken({bool forceRefresh = false}) async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null) return null;
-    return user.getIdToken(forceRefresh);
-  }
-
-  /// 계정 탈퇴(Firebase Auth 삭제) + 로컬 인증 상태 초기화
-  /// `requires-recent-login` 등 FirebaseAuthException을 그대로 전달합니다.
-  Future<void> deleteAccount() async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null) return;
-    await user.delete();
     _userProfile = null;
     _authService.setToken('');
     notifyListeners();
