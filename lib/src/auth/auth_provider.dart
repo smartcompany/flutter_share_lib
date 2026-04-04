@@ -61,6 +61,43 @@ class AuthProvider<T> with ChangeNotifier {
     return _firebaseAuth.currentUser != null;
   }
 
+  /// Firebase `currentUser.uid` (API·댓글 작성 등에 사용).
+  String? currentUid() => _firebaseAuth.currentUser?.uid;
+
+  /// Bearer용 Firebase ID 토큰. 미로그인이면 null.
+  Future<String?> getIdToken([bool forceRefresh = false]) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return null;
+    return user.getIdToken(forceRefresh);
+  }
+
+  /// Firebase 계정 삭제(서버 데이터 삭제 후 호출하는 것을 권장).
+  /// `requires-recent-login` 등은 호출 측에서 처리.
+  Future<void> deleteAccount() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No user signed in',
+      );
+    }
+    try {
+      if (await kakao.AuthApi.instance.hasToken()) {
+        await kakao.UserApi.instance.unlink();
+      }
+    } catch (_) {}
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      await googleSignIn.signOut();
+    } catch (_) {}
+
+    await user.delete();
+    _userProfile = null;
+    _authService.setToken('');
+    notifyListeners();
+  }
+
   final String? _googleServerClientId;
 
   AuthProvider({
