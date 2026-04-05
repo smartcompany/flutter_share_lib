@@ -66,7 +66,8 @@ Future<void> writeAppleNamePartsMap(
 String displayNameFromApplePrefs(SharedPreferences prefs) {
   final m = readAppleNamePartsMap(prefs);
   if (m != null) {
-    final joined = joinAppleFamilyGivenForDisplay(m['familyName'], m['givenName']);
+    final joined =
+        joinAppleFamilyGivenForDisplay(m['familyName'], m['givenName']);
     if (joined.isNotEmpty) return joined;
   }
   final legacy = prefs.getString(kAppleDisplayNameLegacyKey)?.trim();

@@ -555,8 +555,8 @@ class AuthProvider<T> with ChangeNotifier {
           );
         }
 
-        var displayForFirebase =
-            joinAppleFamilyGivenForDisplay(partsMap['familyName'], partsMap['givenName']);
+        var displayForFirebase = joinAppleFamilyGivenForDisplay(
+            partsMap['familyName'], partsMap['givenName']);
         if (displayForFirebase.isEmpty) {
           displayForFirebase = displayNameFromApplePrefs(prefs);
           if (displayForFirebase.isNotEmpty) {
