@@ -42,6 +42,7 @@ class AdService {
   String? _adsType;
   String? _rewardedAdId;
   String? _initialAdId;
+  String? _bannerAdId;
   String? _downloadUrl;
 
   // ios_ads 또는 android_ads 설정 파싱 결과
@@ -54,6 +55,8 @@ class AdService {
 
   String? get rewardedAdId => _rewardedAdId;
   String? get initialAdId => _initialAdId;
+  /// `ios_banner_ad` / `android_banner_ad` → `ref` 필드명 → 실제 유닛 ID (USDTSignal 동일)
+  String? get bannerAdId => _bannerAdId;
   String? get downloadUrl => _downloadUrl;
 
   /// baseUrl 설정
@@ -165,6 +168,7 @@ class AdService {
       }
 
       // 광고 ID 가져오기
+      _bannerAdId = null;
       final ref = data['ref'] as Map<String, dynamic>?;
       if (ref != null) {
         final platformRef = io.Platform.isIOS
@@ -172,6 +176,27 @@ class AdService {
             : ref['android'] as Map<String, dynamic>?;
 
         if (platformRef != null) {
+          // USDTSignal 과 동일: 최상위 `ios_banner_ad` / `android_banner_ad` 가
+          // `ref.{ios|android}` 안의 필드명을 가리킴 (예: "banner_ad").
+          String? bannerRefKey;
+          if (io.Platform.isIOS) {
+            final k = data['ios_banner_ad'];
+            if (k is String && k.trim().isNotEmpty) {
+              bannerRefKey = k.trim();
+            }
+          } else if (io.Platform.isAndroid) {
+            final k = data['android_banner_ad'];
+            if (k is String && k.trim().isNotEmpty) {
+              bannerRefKey = k.trim();
+            }
+          }
+          final dynamic bannerRaw = bannerRefKey != null
+              ? platformRef[bannerRefKey]
+              : platformRef['banner_ad'];
+          if (bannerRaw is String && bannerRaw.trim().isNotEmpty) {
+            _bannerAdId = bannerRaw.trim();
+          }
+
           if (_useAdsConfig) {
             // ios_ads/android_ads 사용 시: 모든 광고 타입의 ID를 동적으로 가져오기
             // _adsConfig에 있는 모든 키에 대해 ID를 가져옴
@@ -210,8 +235,10 @@ class AdService {
       debugPrint('  - adsType: $_adsType');
 
       final hasAdId = _rewardedAdId != null && _rewardedAdId!.isNotEmpty ||
-          _initialAdId != null && _initialAdId!.isNotEmpty;
+          _initialAdId != null && _initialAdId!.isNotEmpty ||
+          _bannerAdId != null && _bannerAdId!.isNotEmpty;
       debugPrint('🔍 [AdService] 광고 ID 존재 여부: $hasAdId');
+      debugPrint('  - bannerAdId: $_bannerAdId');
 
       return hasAdId;
     } catch (e, stackTrace) {
