@@ -12,9 +12,9 @@
   "@appleLoginText": {
     "description": "Apple 로그인 버튼 텍스트"
   },
-  "googleLoginText": "Google로 시작하기",
+  "googleLoginText": "Google 계정으로 로그인",
   "@googleLoginText": {
-    "description": "Google 로그인 버튼 텍스트"
+    "description": "Google 로그인 버튼 — Google Identity 브랜딩 권장 문구"
   },
   "emailLabel": "이메일",
   "@emailLabel": {

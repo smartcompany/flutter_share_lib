@@ -18,7 +18,7 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get appleLoginText => '使用Apple开始';
 
   @override
-  String get googleLoginText => '使用Google开始';
+  String get googleLoginText => '使用 Google 帐号登录';
 
   @override
   String get emailLabel => '电子邮件';

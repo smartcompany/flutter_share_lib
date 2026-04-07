@@ -4,6 +4,8 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
     show isKakaoTalkInstalled;
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
+import 'google_sign_in_branded_button.dart';
+import 'native_apple_sign_in_platform_button.dart';
 import 'auth_config.dart';
 import 'generated/auth_localizations.dart';
 
@@ -568,6 +570,10 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
     final showKakaoLogin =
         config.enableKakaoLogin && (_kakaoTalkInstalled == true);
     final localizations = config.getLocalizations(context);
+    // Apple 시스템 버튼은 로고 크기 API가 없고, 버튼 높이에 맞춰 그림. 구글과 동일 높이로 맞춤.
+    const socialButtonHeight = 56.0;
+    // HIG/웹 가이드 예시는 좁은 캡슐 형태 — 전체 너비로 쓰면 +텍스트는 그대로인데 검은 막대만 넓어져 로고가 작아 보임.
+    const socialButtonMaxWidth = 375.0;
     final isAnyLoading = _isEmailLoading || _isSocialLoading;
     if (isAnyLoading != _isOverlayShown) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -656,55 +662,55 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                         ),
                       if (showKakaoLogin) const SizedBox(height: 12),
 
-                      // 애플 로그인 (iOS만)
+                      // 애플 로그인 (iOS만) — HIG: UIKit ASAuthorizationAppleIDButton (플랫폼 뷰)
                       if (config.enableAppleLogin &&
                           Theme.of(context).platform == TargetPlatform.iOS)
-                        _SocialLoginButton(
-                          icon: '⚫',
-                          text: localizations.appleLoginText,
-                          backgroundColor: Colors.black,
-                          textColor: Colors.white,
-                          isLoading: _isSocialLoading,
-                          onPressed: () {
-                            try {
-                              debugPrint('🟡 [AuthScreen] 애플 로그인 버튼 클릭됨');
-                              debugPrint('🟡 [AuthScreen] context 확인 중...');
-                              final authProvider =
-                                  context.read<AuthProvider<T>>();
-                              debugPrint(
-                                  '🟡 [AuthScreen] AuthProvider 가져옴: ${authProvider.runtimeType}');
-                              debugPrint(
-                                  '🟡 [AuthScreen] _handleSocialLogin 호출 전...');
-                              _handleSocialLogin(
-                                () {
+                        Opacity(
+                          opacity: _isSocialLoading ? 0.55 : 1,
+                          child: IgnorePointer(
+                            ignoring: _isSocialLoading,
+                            child: ShareLibNativeAppleSignInButton(
+                              height: socialButtonHeight,
+                              maxButtonWidth: socialButtonMaxWidth,
+                              cornerRadius: 16,
+                              style: 0,
+                              onPressed: () {
+                                try {
                                   debugPrint(
-                                      '🟡 [AuthScreen] _handleSocialLogin 콜백 실행 시작');
-                                  return authProvider.loginWithApple();
-                                },
-                                'Apple',
-                              );
-                              debugPrint(
-                                  '🟡 [AuthScreen] _handleSocialLogin 호출 완료');
-                            } catch (e, stackTrace) {
-                              debugPrint('❌ [AuthScreen] 버튼 핸들러 에러: $e');
-                              debugPrint('❌ [AuthScreen] 스택 트레이스: $stackTrace');
-                              rethrow;
-                            }
-                          },
+                                      '🟡 [AuthScreen] 애플 로그인 버튼 클릭됨');
+                                  final authProvider =
+                                      context.read<AuthProvider<T>>();
+                                  _handleSocialLogin(
+                                    () {
+                                      debugPrint(
+                                          '🟡 [AuthScreen] _handleSocialLogin 콜백 실행 시작');
+                                      return authProvider.loginWithApple();
+                                    },
+                                    'Apple',
+                                  );
+                                } catch (e, stackTrace) {
+                                  debugPrint(
+                                      '❌ [AuthScreen] 버튼 핸들러 에러: $e');
+                                  debugPrint(
+                                      '❌ [AuthScreen] 스택 트레이스: $stackTrace');
+                                  rethrow;
+                                }
+                              },
+                            ),
+                          ),
                         ),
                       if (config.enableAppleLogin &&
                           Theme.of(context).platform == TargetPlatform.iOS)
                         const SizedBox(height: 12),
 
-                      // 구글 로그인
+                      // 구글 로그인 — Google Identity 브랜딩 가이드 (공식 G 마크 + outlined light)
                       if (config.enableGoogleLogin)
-                        _SocialLoginButton(
-                          icon: '🔵',
-                          text: localizations.googleLoginText,
-                          backgroundColor: Colors.white,
-                          textColor: config.textPrimaryColor,
-                          borderColor: config.dividerColor,
+                        ShareLibGoogleSignInButton(
+                          label: localizations.googleLoginText,
                           isLoading: _isSocialLoading,
+                          height: socialButtonHeight,
+                          maxButtonWidth: socialButtonMaxWidth,
+                          borderRadius: 16,
                           onPressed: () {
                             try {
                               debugPrint('🟡 [AuthScreen] 구글 로그인 버튼 클릭됨');
@@ -900,7 +906,6 @@ class _SocialLoginButton extends StatelessWidget {
   final String text;
   final Color backgroundColor;
   final Color textColor;
-  final Color? borderColor;
   final bool isLoading;
   final VoidCallback onPressed;
 
@@ -909,7 +914,6 @@ class _SocialLoginButton extends StatelessWidget {
     required this.text,
     required this.backgroundColor,
     required this.textColor,
-    this.borderColor,
     this.isLoading = false,
     required this.onPressed,
   });
@@ -927,7 +931,7 @@ class _SocialLoginButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          side: BorderSide(color: borderColor ?? backgroundColor, width: 1.5),
+          side: BorderSide(color: backgroundColor, width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -3,7 +3,7 @@
   "loginTitle": "登录",
   "kakaoLoginText": "使用Kakao开始",
   "appleLoginText": "使用Apple开始",
-  "googleLoginText": "使用Google开始",
+  "googleLoginText": "使用 Google 帐号登录",
   "emailLabel": "电子邮件",
   "emailHint": "example@email.com",
   "passwordLabel": "密码",

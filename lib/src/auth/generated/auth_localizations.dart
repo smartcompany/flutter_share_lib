@@ -120,10 +120,10 @@ abstract class AuthLocalizations {
   /// **'Apple로 시작하기'**
   String get appleLoginText;
 
-  /// Google 로그인 버튼 텍스트
+  /// Google 로그인 버튼 — Google Identity 브랜딩 권장 문구
   ///
   /// In ko, this message translates to:
-  /// **'Google로 시작하기'**
+  /// **'Google 계정으로 로그인'**
   String get googleLoginText;
 
   /// 이메일 입력 필드 레이블

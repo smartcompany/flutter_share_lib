@@ -3,7 +3,7 @@
   "loginTitle": "Login",
   "kakaoLoginText": "Continue with Kakao",
   "appleLoginText": "Continue with Apple",
-  "googleLoginText": "Continue with Google",
+  "googleLoginText": "Sign in with Google",
   "emailLabel": "Email",
   "emailHint": "example@email.com",
   "passwordLabel": "Password",

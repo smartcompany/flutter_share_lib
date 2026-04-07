@@ -18,7 +18,7 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get appleLoginText => 'Apple로 시작하기';
 
   @override
-  String get googleLoginText => 'Google로 시작하기';
+  String get googleLoginText => 'Google 계정으로 로그인';
 
   @override
   String get emailLabel => '이메일';

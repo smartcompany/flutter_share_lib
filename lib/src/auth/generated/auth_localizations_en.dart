@@ -18,7 +18,7 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get appleLoginText => 'Continue with Apple';
 
   @override
-  String get googleLoginText => 'Continue with Google';
+  String get googleLoginText => 'Sign in with Google';
 
   @override
   String get emailLabel => 'Email';

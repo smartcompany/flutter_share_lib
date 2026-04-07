@@ -3,7 +3,7 @@
   "loginTitle": "ログイン",
   "kakaoLoginText": "Kakaoで始める",
   "appleLoginText": "Appleで始める",
-  "googleLoginText": "Googleで始める",
+  "googleLoginText": "Googleでログイン",
   "emailLabel": "メールアドレス",
   "emailHint": "example@email.com",
   "passwordLabel": "パスワード",
