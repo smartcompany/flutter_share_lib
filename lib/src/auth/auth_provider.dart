@@ -386,17 +386,24 @@ class AuthProvider<T> with ChangeNotifier {
     try {
       debugPrint('🔵 [AuthProvider] 카카오 로그인 시작...');
 
-      // 카카오 로그인 실행 (카카오톡 앱이 없으면 웹 브라우저로 대체)
-      OAuthToken token;
-      try {
-        debugPrint('🔵 [AuthProvider] 카카오톡 앱 로그인 시도...');
-        token = await kakao.UserApi.instance.loginWithKakaoTalk();
-        debugPrint('✅ [AuthProvider] 카카오톡 앱 로그인 성공');
-      } catch (e) {
-        debugPrint('⚠️ [AuthProvider] 카카오톡 앱 로그인 실패, 웹 로그인 시도... $e');
-        // 카카오톡 앱이 없거나 실패하면 웹 브라우저로 로그인
+      // 네이티브: 톡 우선 → 없으면 계정 웹.
+      // 웹(모바일 브라우저 포함): 톡 시도 후 catch 로 계정 로그인을 붙이면, 앱으로 인증 후
+      // 복귀했을 때 첫 Future 가 실패 처리되어 카카오계정 웹 로그인이 한 번 더 뜨는 경우가 있음.
+      final OAuthToken token;
+      if (kIsWeb) {
+        debugPrint('🔵 [AuthProvider] 카카오 로그인 (웹 단일 플로우, loginWithKakaoAccount)...');
         token = await kakao.UserApi.instance.loginWithKakaoAccount();
-        debugPrint('✅ [AuthProvider] 카카오 웹 로그인 성공');
+        debugPrint('✅ [AuthProvider] 카카오 웹 로그인 완료');
+      } else {
+        try {
+          debugPrint('🔵 [AuthProvider] 카카오톡 앱 로그인 시도...');
+          token = await kakao.UserApi.instance.loginWithKakaoTalk();
+          debugPrint('✅ [AuthProvider] 카카오톡 앱 로그인 성공');
+        } catch (e) {
+          debugPrint('⚠️ [AuthProvider] 카카오톡 앱 로그인 실패, 웹 로그인 시도... $e');
+          token = await kakao.UserApi.instance.loginWithKakaoAccount();
+          debugPrint('✅ [AuthProvider] 카카오 웹 로그인 성공');
+        }
       }
 
       debugPrint('🔵 [AuthProvider] 카카오 사용자 정보 가져오기...');
