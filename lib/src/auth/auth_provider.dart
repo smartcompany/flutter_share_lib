@@ -389,7 +389,8 @@ class AuthProvider<T> with ChangeNotifier {
       // 네이티브: 톡 우선 → 없으면 계정 웹.
       // 웹(모바일 브라우저 포함): 톡 시도 후 catch 로 계정 로그인을 붙이면, 앱으로 인증 후
       // 복귀했을 때 첫 Future 가 실패 처리되어 카카오계정 웹 로그인이 한 번 더 뜨는 경우가 있음.
-      final OAuthToken token;
+      // (try/catch 에서 final token 에 두 번 대입 가능하다고 분석 못 하는 컴파일러 대비 non-final)
+      OAuthToken token;
       if (kIsWeb) {
         debugPrint('🔵 [AuthProvider] 카카오 로그인 (웹 단일 플로우, loginWithKakaoAccount)...');
         token = await kakao.UserApi.instance.loginWithKakaoAccount();
