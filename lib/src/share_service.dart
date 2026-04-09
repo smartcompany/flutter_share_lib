@@ -10,6 +10,15 @@ import 'package:path_provider/path_provider.dart';
 /// 공유 기능을 제공하는 서비스 클래스
 /// 다른 앱에서도 재사용 가능하도록 UI와 분리된 순수 로직만 포함
 class ShareService {
+  static Uri? _extractFirstHttpUrl(String text) {
+    final regex = RegExp(r'https?://[^\s]+', caseSensitive: false);
+    final m = regex.firstMatch(text);
+    if (m == null) return null;
+    final raw = m.group(0);
+    if (raw == null || raw.isEmpty) return null;
+    return Uri.tryParse(raw);
+  }
+
   /// 카카오톡 공유
   ///
   /// [shareText] 공유할 텍스트
@@ -18,6 +27,7 @@ class ShareService {
   /// [onKakaoNotInstalled] 카카오톡 미설치 시 콜백 (선택사항)
   static Future<bool> shareToKakao(
     String shareText, {
+    Uri? linkUrl,
     VoidCallback? onSuccess,
     Function(String error)? onError,
     VoidCallback? onKakaoNotInstalled,
@@ -33,10 +43,18 @@ class ShareService {
 
     try {
       debugPrint('🔍 [카카오톡 공유] TextTemplate 생성 중...');
+      final resolvedLinkUrl = linkUrl ?? _extractFirstHttpUrl(shareText);
 
       final template = TextTemplate(
         text: shareText,
-        link: Link(), // 빈 링크로 앱 이동 방지
+        // URL이 있으면 카카오 템플릿 링크에 실어 전달한다.
+        // 텍스트만 넣으면 카카오 인앱 웹뷰로 열리며 UL이 덜 타는 경우가 있어 web/mobileWebUrl 모두 설정.
+        link: resolvedLinkUrl != null
+            ? Link(
+                webUrl: resolvedLinkUrl,
+                mobileWebUrl: resolvedLinkUrl,
+              )
+            : Link(),
       );
 
       debugPrint('🔍 [카카오톡 공유] shareDefault 호출 중...');
@@ -68,12 +86,17 @@ class ShareService {
   static Future<bool> shareText(
     String shareText, {
     String? subject,
+    Rect? sharePositionOrigin,
     VoidCallback? onSuccess,
     Function(String error)? onError,
   }) async {
     try {
       debugPrint('🔍 [기본 공유] 텍스트 공유 시작');
-      await Share.share(shareText, subject: subject);
+      await Share.share(
+        shareText,
+        subject: subject,
+        sharePositionOrigin: sharePositionOrigin,
+      );
       debugPrint('✅ [기본 공유] 공유 완료');
       onSuccess?.call();
       return true;
@@ -95,6 +118,7 @@ class ShareService {
     String shareText,
     Uint8List imageBytes, {
     String? subject,
+    Rect? sharePositionOrigin,
     VoidCallback? onSuccess,
     Function(String error)? onError,
   }) async {
@@ -116,6 +140,7 @@ class ShareService {
         [xFile],
         text: shareText,
         subject: subject ?? '공유',
+        sharePositionOrigin: sharePositionOrigin,
       );
       debugPrint('✅ [기본 공유] 공유 완료');
 
@@ -137,7 +162,11 @@ class ShareService {
       debugPrint('❌ [기본 공유] 에러: $e');
       // Fallback to text-only share if image sharing fails
       try {
-        await Share.share(shareText, subject: subject);
+        await Share.share(
+          shareText,
+          subject: subject,
+          sharePositionOrigin: sharePositionOrigin,
+        );
         onSuccess?.call();
         return true;
       } catch (fallbackError) {
