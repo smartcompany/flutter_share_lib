@@ -42,6 +42,11 @@ class MediaPickerService {
     int quality = 65,
     String compressFailureMessage = '이미지 압축 실패',
   }) async {
+    debugPrint(
+      '🔵 [MediaPickerService] pickImages start '
+      'maxCount=$maxCount compress=$compress maxWidth=$maxWidth '
+      'maxHeight=$maxHeight quality=$quality',
+    );
     // 이미지만 선택하므로 image 타입만 요청. 기본값(common)이면 이미지+동영상 권한을 모두 요구해
     // 사진만 허용한 경우에도 거부로 인식될 수 있음. hasAccess(authorized || limited)로 판단해
     // "일부만 허용" 상태에서도 피커를 연다.
@@ -58,6 +63,7 @@ class MediaPickerService {
       'hasAccess=${ps.hasAccess}, isLimited=${ps.isLimited}',
     );
     if (!ps.hasAccess) {
+      debugPrint('🟡 [MediaPickerService] permission denied');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(permissionDeniedMessage)),
@@ -78,6 +84,9 @@ class MediaPickerService {
           compressFailureMessage: compressFailureMessage,
         ),
       ),
+    );
+    debugPrint(
+      '🔵 [MediaPickerService] pickImages done files=${files?.length ?? -1}',
     );
 
     return files;
@@ -117,6 +126,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   }
 
   Future<void> _loadAssets() async {
+    debugPrint('🔵 [MediaPickerService] _loadAssets start');
     try {
       final paths = await PhotoManager.getAssetPathList(
         hasAll: true,
@@ -124,6 +134,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
         type: RequestType.image,
       );
       if (paths.isEmpty) {
+        debugPrint('🟡 [MediaPickerService] no album paths');
         setState(() {
           _isLoading = false;
         });
@@ -131,14 +142,17 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
       }
       final recent = paths.first;
       final assets = await recent.getAssetListRange(start: 0, end: 200);
+      debugPrint(
+        '🔵 [MediaPickerService] _loadAssets success album=${recent.name} count=${assets.length}',
+      );
       setState(() {
         _assets
           ..clear()
           ..addAll(assets);
         _isLoading = false;
       });
-    } catch (e) {
-      debugPrint('❌ [MediaPickerService] 이미지 로드 실패: $e');
+    } catch (e, st) {
+      debugPrint('❌ [MediaPickerService] 이미지 로드 실패: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지를 불러오지 못했습니다')),
@@ -151,10 +165,17 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   }
 
   Future<void> _onCameraTap() async {
+    debugPrint('🔵 [MediaPickerService] _onCameraTap start');
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(source: ImageSource.camera);
-      if (picked == null) return;
+      if (picked == null) {
+        debugPrint('🟡 [MediaPickerService] _onCameraTap cancelled');
+        return;
+      }
+      debugPrint(
+        '🔵 [MediaPickerService] _onCameraTap picked path=${picked.path}',
+      );
 
       final dir = await getTemporaryDirectory();
       final targetPath =
@@ -170,6 +191,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           minHeight: widget.maxHeight,
         );
         if (compressed == null) {
+          debugPrint('❌ [MediaPickerService] _onCameraTap compress failed');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(widget.compressFailureMessage)),
@@ -178,12 +200,16 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           return;
         }
         outPath = compressed.path;
+        debugPrint(
+          '🔵 [MediaPickerService] _onCameraTap compressed path=$outPath',
+        );
       }
 
       if (!mounted) return;
+      debugPrint('✅ [MediaPickerService] _onCameraTap done');
       Navigator.of(context).pop(<XFile>[XFile(outPath)]);
-    } catch (e) {
-      debugPrint('❌ [MediaPickerService] 카메라 촬영 실패: $e');
+    } catch (e, st) {
+      debugPrint('❌ [MediaPickerService] 카메라 촬영 실패: $e\n$st');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('카메라를 사용할 수 없습니다')),
@@ -194,6 +220,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   void _onAssetTap(AssetEntity asset) {
     setState(() {
       if (_selected.contains(asset)) {
+        debugPrint('🔵 [MediaPickerService] deselect asset id=${asset.id}');
         _selected.remove(asset);
       } else {
         if (_selected.length >= widget.maxCount) {
@@ -203,6 +230,9 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           return;
         }
         _selected.add(asset);
+        debugPrint(
+          '🔵 [MediaPickerService] select asset id=${asset.id} selected=${_selected.length}/${widget.maxCount}',
+        );
         // 1장만 선택하는 경우(프로필/배경 사진 등) 클릭 즉시 적용
         if (widget.maxCount == 1) {
           _onConfirm();
@@ -212,7 +242,9 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   }
 
   Future<void> _onConfirm() async {
+    debugPrint('🔵 [MediaPickerService] _onConfirm start selected=${_selected.length}');
     if (_selected.isEmpty) {
+      debugPrint('🟡 [MediaPickerService] _onConfirm empty selection');
       Navigator.of(context).pop(<XFile>[]);
       return;
     }
@@ -220,8 +252,15 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
     final List<XFile> files = [];
     int index = 0;
     for (final asset in _selected) {
+      debugPrint(
+        '🔵 [MediaPickerService] _onConfirm asset id=${asset.id} type=${asset.typeInt} title=${asset.title}',
+      );
       final file = await asset.file;
-      if (file == null) continue;
+      if (file == null) {
+        debugPrint('❌ [MediaPickerService] _onConfirm file null id=${asset.id}');
+        continue;
+      }
+      debugPrint('🔵 [MediaPickerService] _onConfirm file path=${file.path}');
       if (widget.compress) {
         final targetPath =
             '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$index.jpg';
@@ -234,7 +273,11 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
         );
         if (compressed != null) {
           files.add(XFile(compressed.path));
+          debugPrint(
+            '🔵 [MediaPickerService] _onConfirm compressed path=${compressed.path}',
+          );
         } else {
+          debugPrint('❌ [MediaPickerService] _onConfirm compress failed id=${asset.id}');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(widget.compressFailureMessage)),
@@ -244,10 +287,12 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
         }
       } else {
         files.add(XFile(file.path));
+        debugPrint('🔵 [MediaPickerService] _onConfirm keep original path=${file.path}');
       }
       index++;
     }
     if (!mounted) return;
+    debugPrint('✅ [MediaPickerService] _onConfirm done outFiles=${files.length}');
     Navigator.of(context).pop(files);
   }
 
