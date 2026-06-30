@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -19,6 +20,57 @@ class ShareService {
     return Uri.tryParse(raw);
   }
 
+  static void _logKakaoShareDefaultUri(Uri uri, {Uri? requestedLinkUrl}) {
+    final buffer = StringBuffer('[KakaoShare] shareDefault 완료\n');
+    buffer.writeln('  template_id: ${uri.queryParameters['template_id'] ?? '-'}');
+
+    final templateArgsRaw = uri.queryParameters['template_args'];
+    if (templateArgsRaw == null || templateArgsRaw.isEmpty) {
+      buffer.writeln(
+        '  linkUrl: ${requestedLinkUrl?.toString() ?? '(없음)'}',
+      );
+      debugPrint(buffer.toString());
+      return;
+    }
+
+    try {
+      final decoded = jsonDecode(templateArgsRaw) as Map<String, dynamic>;
+      String? linkUrl;
+      String? buttonTitle;
+
+      for (final entry in decoded.entries) {
+        final key = entry.key;
+        final value = entry.value?.toString() ?? '';
+        if (value.isEmpty) continue;
+
+        final isHttpUrl =
+            (key.contains('URL') || key.contains('url')) &&
+            value.startsWith('http');
+        if (isHttpUrl) {
+          linkUrl ??= value;
+          continue;
+        }
+        if (key == r'${FIRST_BUTTON_TITLE}') {
+          buttonTitle = value;
+        }
+      }
+
+      buffer.writeln(
+        '  linkUrl: ${linkUrl ?? requestedLinkUrl?.toString() ?? '(없음)'}',
+      );
+      if (buttonTitle != null) {
+        buffer.writeln('  buttonTitle: $buttonTitle');
+      }
+    } catch (error) {
+      buffer.writeln('  template_args decode 실패: $error');
+      buffer.writeln(
+        '  linkUrl(fallback): ${requestedLinkUrl?.toString() ?? '(없음)'}',
+      );
+    }
+
+    debugPrint(buffer.toString());
+  }
+
   /// 카카오톡 공유
   ///
   /// [shareText] 공유할 텍스트
@@ -28,6 +80,9 @@ class ShareService {
   static Future<bool> shareToKakao(
     String shareText, {
     Uri? linkUrl,
+    /// 카카오 말풍선 하단 링크 버튼 문구. 없으면 URL 미리보기가 노출될 수 있음.
+    String? linkButtonTitle,
+    void Function(Uri sendUri)? onShareDefaultUri,
     VoidCallback? onSuccess,
     Function(String error)? onError,
     VoidCallback? onKakaoNotInstalled,
@@ -47,8 +102,8 @@ class ShareService {
 
       final template = TextTemplate(
         text: shareText,
-        // URL이 있으면 카카오 템플릿 링크에 실어 전달한다.
-        // 텍스트만 넣으면 카카오 인앱 웹뷰로 열리며 UL이 덜 타는 경우가 있어 web/mobileWebUrl 모두 설정.
+        buttonTitle: linkButtonTitle,
+        // 클릭 시 webUrl/mobileWebUrl(Universal Link)로 이동. 본문 text에 URL 넣지 않음.
         link: resolvedLinkUrl != null
             ? Link(
                 webUrl: resolvedLinkUrl,
@@ -57,15 +112,23 @@ class ShareService {
             : Link(),
       );
 
+      debugPrint('🔍 [카카오톡 공유] linkUrl=$resolvedLinkUrl');
+
       debugPrint('🔍 [카카오톡 공유] shareDefault 호출 중...');
       final uri = await ShareClient.instance.shareDefault(template: template);
-      debugPrint('🔍 [카카오톡 공유] shareDefault 완료, URI: $uri');
+      _logKakaoShareDefaultUri(uri, requestedLinkUrl: resolvedLinkUrl);
+      onShareDefaultUri?.call(uri);
 
-      if (await canLaunchUrl(uri)) {
-        debugPrint('🔍 [카카오톡 공유] launchUrl 실행 중...');
-        await launchUrl(uri);
-        debugPrint('✅ [카카오톡 공유] 성공');
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        debugPrint('❌ [카카오톡 공유] launchUrl 실패');
+        onError?.call('Failed to open KakaoTalk');
+        return false;
       }
+      debugPrint('✅ [카카오톡 공유] 성공');
 
       onSuccess?.call();
       return true;
