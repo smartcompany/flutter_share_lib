@@ -225,7 +225,20 @@ class AdService {
         }
       }
 
-      _downloadUrl = data['down_load_url'] as String?;
+      _downloadUrl = () {
+        final top = data['down_load_url'];
+        if (top is String && top.trim().isNotEmpty) {
+          return top.trim();
+        }
+        final nested = data['min_version'];
+        if (nested is Map) {
+          final fromBlock = nested['down_load_url'];
+          if (fromBlock is String && fromBlock.trim().isNotEmpty) {
+            return fromBlock.trim();
+          }
+        }
+        return null;
+      }();
 
       debugPrint('🔍 [AdService] 설정 로드 완료:');
       debugPrint('  - useAdsConfig: $_useAdsConfig');

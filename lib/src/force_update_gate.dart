@@ -9,19 +9,18 @@ import 'force_update_service.dart';
 /// MaterialApp(
 ///   home: ForceUpdateGate(
 ///     baseUrl: 'https://your-server.com',
-///     androidStoreUrl: 'https://play.google.com/store/apps/details?id=...',
-///     iosStoreUrl: 'https://apps.apple.com/app/id...',
 ///     child: HomeScreen(),
 ///   ),
 /// )
 /// ```
+///
+/// 다운로드 링크는 settings의 `down_load_url`을 사용합니다.
 class ForceUpdateGate extends StatefulWidget {
   const ForceUpdateGate({
     super.key,
     required this.baseUrl,
     required this.child,
-    this.iosStoreUrl,
-    this.androidStoreUrl,
+    this.downloadUrlFallback,
     this.title,
     this.message,
     this.buttonLabel,
@@ -32,9 +31,8 @@ class ForceUpdateGate extends StatefulWidget {
 
   final Widget child;
 
-  /// settings에 URL이 없을 때 사용하는 폴백.
-  final String? iosStoreUrl;
-  final String? androidStoreUrl;
+  /// settings에 `down_load_url`이 없을 때 사용하는 폴백.
+  final String? downloadUrlFallback;
 
   /// UI 문구 오버라이드 (없으면 locale 기본값).
   final String? title;
@@ -58,8 +56,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
   Future<void> _runCheck() async {
     ForceUpdateService.shared.setBaseUrl(widget.baseUrl);
     final result = await ForceUpdateService.shared.check(
-      iosStoreUrlFallback: widget.iosStoreUrl,
-      androidStoreUrlFallback: widget.androidStoreUrl,
+      downloadUrlFallback: widget.downloadUrlFallback,
     );
     if (!mounted) return;
     setState(() {
@@ -68,23 +65,22 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
     });
   }
 
-  Future<void> _openStore() async {
-    final url = _result?.storeUrl?.trim();
+  Future<void> _openDownload() async {
+    final url = _result?.downloadUrl?.trim();
     if (url == null || url.isEmpty) {
-      debugPrint('❌ [ForceUpdate] storeUrl이 없습니다');
+      debugPrint('❌ [ForceUpdate] down_load_url이 없습니다');
       return;
     }
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok) {
-      debugPrint('❌ [ForceUpdate] 스토어 열기 실패: $url');
+      debugPrint('❌ [ForceUpdate] 다운로드 링크 열기 실패: $url');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 검사 중이거나 강제 업데이트가 아니면 앱 정상 표시
     if (_checking || _result == null || !_result!.requiresForceUpdate) {
       return widget.child;
     }
@@ -95,8 +91,8 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
         _result!.message ??
         _defaultMessage(
           locale,
-          current: _result!.currentVersion,
-          min: _result!.minVersion ?? '',
+          current: _result!.currentLabel,
+          required: _result!.requiredLabel ?? '',
         );
     final buttonLabel = widget.buttonLabel ?? _defaultButton(locale);
 
@@ -140,7 +136,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed: _openStore,
+                    onPressed: _openDownload,
                     child: Text(
                       buttonLabel,
                       style: const TextStyle(
@@ -175,34 +171,34 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
   static String _defaultMessage(
     Locale locale, {
     required String current,
-    required String min,
+    required String required,
   }) {
     switch (locale.languageCode) {
       case 'ko':
         return '계속 사용하려면 최신 버전으로 업데이트해 주세요.\n'
-            '(현재 $current → 필요 $min)';
+            '(현재 $current → 필요 $required)';
       case 'ja':
         return 'アプリを使い続けるには最新版へのアップデートが必要です。\n'
-            '（現在 $current → 必要 $min）';
+            '（現在 $current → 必要 $required）';
       case 'zh':
         return '请更新到最新版本以继续使用。\n'
-            '（当前 $current → 需要 $min）';
+            '（当前 $current → 需要 $required）';
       default:
         return 'Please update to the latest version to continue.\n'
-            '(Current $current → Required $min)';
+            '(Current $current → Required $required)';
     }
   }
 
   static String _defaultButton(Locale locale) {
     switch (locale.languageCode) {
       case 'ko':
-        return '스토어에서 업데이트';
+        return '업데이트하기';
       case 'ja':
-        return 'ストアで更新';
+        return 'アップデートする';
       case 'zh':
-        return '前往商店更新';
+        return '前往更新';
       default:
-        return 'Update on Store';
+        return 'Update now';
     }
   }
 }
