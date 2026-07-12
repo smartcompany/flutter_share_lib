@@ -33,6 +33,7 @@ dependencies:
   path_provider_foundation: ">=2.4.0 <2.6.0"
   google_mobile_ads: ^5.1.0
   shared_preferences: ^2.2.2
+  package_info_plus: ^8.0.0
   http: ^1.2.0
   # Firebase 인증
   firebase_core: ^4.3.0
