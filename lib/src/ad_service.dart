@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'package:flutter/material.dart';
@@ -53,11 +54,22 @@ class AdService {
   String? _currentAdType; // 현재 표시 중인 광고 타입
   int _currentAdCount = 0; // 현재 광고 타입의 표시 횟수 (메모리 캐시)
 
+  // Preload 캐시 (다음에 보여줄 광고를 미리 로드)
+  RewardedAd? _preloadedRewarded;
+  InterstitialAd? _preloadedInterstitial;
+  String? _preloadedType;
+  bool _isPreloading = false;
+  Completer<bool>? _preloadCompleter;
+
   String? get rewardedAdId => _rewardedAdId;
   String? get initialAdId => _initialAdId;
   /// `ios_banner_ad` / `android_banner_ad` → `ref` 필드명 → 실제 유닛 ID (USDTSignal 동일)
   String? get bannerAdId => _bannerAdId;
   String? get downloadUrl => _downloadUrl;
+
+  /// 다음에 쓸 광고가 이미 로드되어 있으면 true.
+  bool get isAdReady =>
+      _preloadedRewarded != null || _preloadedInterstitial != null;
 
   /// baseUrl 설정
   ///
@@ -343,6 +355,153 @@ class AdService {
     return resultType;
   }
 
+  /// 카운트를 올리지 않고 다음에 나올 광고 타입만 확인.
+  Future<String?> _peekNextAdType() async {
+    if (!_useAdsConfig || _adsConfig.isEmpty) {
+      return _adsType;
+    }
+
+    var type = _currentAdType;
+    var count = _currentAdCount;
+    if (type == null || !_adsConfig.containsKey(type)) {
+      type = _adsConfig.keys.first;
+      count = 0;
+    }
+
+    final threshold = _adsConfig[type]!;
+    if (count >= threshold) {
+      final adTypes = _adsConfig.keys.toList();
+      final currentIndex = adTypes.indexOf(type);
+      type = adTypes[(currentIndex + 1) % adTypes.length];
+    }
+    return type;
+  }
+
+  void _clearPreloadedAds() {
+    _preloadedRewarded?.dispose();
+    _preloadedInterstitial?.dispose();
+    _preloadedRewarded = null;
+    _preloadedInterstitial = null;
+    _preloadedType = null;
+  }
+
+  ({String? adUnitId, bool isRewarded}) _resolveAdUnit(String? adType) {
+    if (_useAdsConfig) {
+      if (adType == 'rewarded_ad' || adType == 'rewarded_test') {
+        return (adUnitId: _rewardedAdId, isRewarded: true);
+      }
+      if (adType == 'initial_ad' || adType == 'interstitial_ad') {
+        return (adUnitId: _initialAdId, isRewarded: false);
+      }
+      return (adUnitId: null, isRewarded: false);
+    }
+    return (
+      adUnitId: _rewardedAdId,
+      isRewarded: _adsType == 'rewarded_ad',
+    );
+  }
+
+  /// 다음에 보여줄 광고를 백그라운드에서 미리 로드합니다.
+  ///
+  /// 앱 시작 직·광고 종료 후 호출하면, 분석 진입 시 대기 시간을 줄일 수 있습니다.
+  Future<bool> preloadAd() async {
+    if (_isPreloading) {
+      return _preloadCompleter?.future ?? Future.value(isAdReady);
+    }
+    if (isAdReady) {
+      debugPrint('ℹ️ [AdService] 이미 preloaded: $_preloadedType');
+      return true;
+    }
+
+    final peekType = await _peekNextAdType();
+    if (peekType == null) {
+      debugPrint('ℹ️ [AdService] preload 스킵 (다음 타입 없음)');
+      return false;
+    }
+
+    final resolved = _resolveAdUnit(peekType);
+    final adUnitId = resolved.adUnitId;
+    if (adUnitId == null || adUnitId.isEmpty) {
+      debugPrint('❌ [AdService] preload 실패: 광고 ID 없음 ($peekType)');
+      return false;
+    }
+
+    _isPreloading = true;
+    _preloadCompleter = Completer<bool>();
+    debugPrint(
+      '⏳ [AdService] preload 시작: type=$peekType adUnitId=$adUnitId',
+    );
+
+    try {
+      if (resolved.isRewarded) {
+        await RewardedAd.load(
+          adUnitId: adUnitId,
+          request: const AdRequest(),
+          rewardedAdLoadCallback: RewardedAdLoadCallback(
+            onAdLoaded: (ad) {
+              _clearPreloadedAds();
+              _preloadedRewarded = ad;
+              _preloadedType = peekType;
+              debugPrint('✅ [AdService] rewarded preload 완료');
+              _finishPreload(true);
+            },
+            onAdFailedToLoad: (error) {
+              debugPrint('❌ [AdService] rewarded preload 실패: $error');
+              _finishPreload(false);
+            },
+          ),
+        );
+      } else {
+        await InterstitialAd.load(
+          adUnitId: adUnitId,
+          request: const AdRequest(),
+          adLoadCallback: InterstitialAdLoadCallback(
+            onAdLoaded: (ad) {
+              _clearPreloadedAds();
+              _preloadedInterstitial = ad;
+              _preloadedType = peekType;
+              debugPrint('✅ [AdService] interstitial preload 완료');
+              _finishPreload(true);
+            },
+            onAdFailedToLoad: (error) {
+              debugPrint('❌ [AdService] interstitial preload 실패: $error');
+              _finishPreload(false);
+            },
+          ),
+        );
+      }
+
+      return await _preloadCompleter!.future.timeout(
+        const Duration(seconds: 25),
+        onTimeout: () {
+          debugPrint('⏱️ [AdService] preload 타임아웃');
+          _finishPreload(false);
+          return false;
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ [AdService] preload 예외: $e');
+      _finishPreload(false);
+      return false;
+    }
+  }
+
+  void _finishPreload(bool success) {
+    _isPreloading = false;
+    final completer = _preloadCompleter;
+    _preloadCompleter = null;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(success);
+    }
+  }
+
+  void _scheduleNextPreload() {
+    // 표시 직 다음 광고를 백그라운드에서 준비
+    Future<void>.delayed(const Duration(milliseconds: 400), () {
+      unawaited(preloadAd());
+    });
+  }
+
   /// 전면 광고 표시 (내부 전용)
   ///
   /// ios_ads/android_ads 설정이 있으면 자동으로 전면 광고를
@@ -517,11 +676,66 @@ class AdService {
     );
   }
 
+  bool _isCompatiblePreload(String nextAdType) {
+    final preloaded = _preloadedType;
+    if (preloaded == null) return false;
+    if (preloaded == nextAdType) return true;
+    final rewarded = {'rewarded_ad', 'rewarded_test'};
+    final interstitial = {'initial_ad', 'interstitial_ad'};
+    return (rewarded.contains(preloaded) && rewarded.contains(nextAdType)) ||
+        (interstitial.contains(preloaded) && interstitial.contains(nextAdType));
+  }
+
+  void _attachAndShowRewarded(
+    RewardedAd ad, {
+    required VoidCallback onAdDismissed,
+    VoidCallback? onAdFailedToShow,
+    Function(RewardItem)? onUserEarnedReward,
+  }) {
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        onAdDismissed();
+        _scheduleNextPreload();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        onAdFailedToShow?.call();
+        _scheduleNextPreload();
+      },
+    );
+    ad.show(
+      onUserEarnedReward: (ad, reward) {
+        debugPrint('🎁 [AdService] 보상 획득: ${reward.amount} ${reward.type}');
+        onUserEarnedReward?.call(reward);
+      },
+    );
+  }
+
+  void _attachAndShowInterstitial(
+    InterstitialAd ad, {
+    required VoidCallback onAdDismissed,
+    VoidCallback? onAdFailedToShow,
+  }) {
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        ad.dispose();
+        onAdDismissed();
+        _scheduleNextPreload();
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        ad.dispose();
+        onAdFailedToShow?.call();
+        _scheduleNextPreload();
+      },
+    );
+    ad.show();
+  }
+
   /// 광고 타입에 따라 자동으로 전면 광고 또는 보상형 광고 표시
   ///
-  /// ios_ads/android_ads 설정을 확인하여 적절한 광고를 표시합니다.
-  /// 내부적으로 showRewardedAd 또는 showInterstitialAd를 호출하며,
-  /// 각 메서드 내부에서 _getNextAdType()을 호출하므로 카운트가 정상적으로 증가합니다.
+  /// [preloadAd]로 미리 로드된 광고가 있으면 즉시 표시하고,
+  /// 없으면 그 시점에 로드합니다. 닫힌 뒤에는 다음 광고를 preload합니다.
   ///
   /// [onAdDismissed] 광고가 닫힌 후 호출되는 콜백
   /// [onAdFailedToShow] 광고 표시 실패 시 호출되는 콜백 (선택사항)
@@ -533,38 +747,14 @@ class AdService {
   }) async {
     debugPrint('🔍 [AdService] showAd 호출 (자동 타입 결정)');
 
-    // 먼저 다음 광고 타입을 확인 (카운트 증가 전)
-    // _getNextAdType()을 직접 호출하지 않고, showRewardedAd/showInterstitialAd 내부에서 처리
-    // 하지만 타입을 미리 확인하려면 _getNextAdType()을 호출해야 함
+    // preload 중이면 잠시 기다려 캐시를 우선 사용
+    if (_isPreloading && _preloadCompleter != null) {
+      debugPrint('⏳ [AdService] preload 완료 대기…');
+      try {
+        await _preloadCompleter!.future.timeout(const Duration(seconds: 8));
+      } catch (_) {}
+    }
 
-    // 임시로 카운트를 증가시키지 않고 타입만 확인하는 방법이 필요하지만,
-    // 현재 구조상 showRewardedAd/showInterstitialAd 내부에서 _getNextAdType()을 호출하므로
-    // 그냥 두 메서드를 모두 시도하거나, 다른 방법을 사용해야 함
-
-    // 간단한 방법: showRewardedAd를 먼저 시도하고, 보상형 광고 타입이 아니면
-    // 내부에서 경고를 출력하고 onAdDismissed를 호출하므로, 그 다음 showInterstitialAd를 호출
-    // 하지만 이 방법은 비효율적
-
-    // 더 나은 방법: _getNextAdType()을 먼저 호출해서 타입을 확인하고,
-    // 적절한 메서드를 호출하되, 호출된 메서드 내부에서는 카운트를 증가시키지 않도록 해야 함
-    // 하지만 이는 구조 변경이 필요함
-
-    // 현재 구조를 유지하면서 해결: showRewardedAd와 showInterstitialAd가
-    // 내부에서 _getNextAdType()을 호출하므로, 각각 한 번씩 호출하면 카운트가 두 번 증가함
-    // 이를 방지하려면 _getNextAdType()에 skipIncrement 파라미터를 추가하거나,
-    // showAd에서 직접 광고를 표시하도록 해야 함
-
-    // 일단 간단하게: showRewardedAd를 먼저 시도하고, 보상형 광고가 아니면
-    // 내부에서 onAdDismissed를 호출하므로, 그 다음 showInterstitialAd를 호출하지 않음
-    // 대신 showRewardedAd 내부에서 타입이 맞지 않으면 바로 onAdDismissed를 호출하므로
-    // 그 다음에 showInterstitialAd를 호출해야 함
-
-    // 하지만 이 방법도 카운트가 두 번 증가할 수 있음
-
-    // 가장 간단한 해결책: showRewardedAd와 showInterstitialAd를 직접 호출하지 않고,
-    // showAd에서 직접 광고를 표시하도록 수정
-
-    // 다음 광고 타입 결정
     final nextAdType = await _getNextAdType();
     debugPrint('🔍 [AdService] 결정된 광고 타입: $nextAdType');
 
@@ -574,27 +764,9 @@ class AdService {
       return;
     }
 
-    String? adUnitId;
-    bool isRewarded = false;
-
-    if (_useAdsConfig) {
-      if (nextAdType == 'rewarded_ad' || nextAdType == 'rewarded_test') {
-        adUnitId = _rewardedAdId;
-        isRewarded = true;
-      } else if (nextAdType == 'initial_ad' ||
-          nextAdType == 'interstitial_ad') {
-        adUnitId = _initialAdId;
-        isRewarded = false;
-      } else {
-        debugPrint('⚠️ [AdService] 알 수 없는 광고 타입: $nextAdType');
-        onAdDismissed();
-        return;
-      }
-    } else {
-      // 기존 방식
-      adUnitId = _rewardedAdId;
-      isRewarded = _adsType == 'rewarded_ad';
-    }
+    final resolved = _resolveAdUnit(nextAdType);
+    final adUnitId = resolved.adUnitId;
+    final isRewarded = resolved.isRewarded;
 
     if (adUnitId == null || adUnitId.isEmpty) {
       debugPrint('❌ [AdService] 광고 ID가 없습니다. adUnitId: $adUnitId');
@@ -602,60 +774,81 @@ class AdService {
       return;
     }
 
+    // Preloaded 광고가 타입에 맞으면 즉시 표시
+    if (_isCompatiblePreload(nextAdType)) {
+      if (isRewarded && _preloadedRewarded != null) {
+        final ad = _preloadedRewarded!;
+        _preloadedRewarded = null;
+        _preloadedType = null;
+        debugPrint('⚡ [AdService] preloaded rewarded 즉시 표시');
+        _attachAndShowRewarded(
+          ad,
+          onAdDismissed: onAdDismissed,
+          onAdFailedToShow: onAdFailedToShow,
+          onUserEarnedReward: onUserEarnedReward,
+        );
+        return;
+      }
+      if (!isRewarded && _preloadedInterstitial != null) {
+        final ad = _preloadedInterstitial!;
+        _preloadedInterstitial = null;
+        _preloadedType = null;
+        debugPrint('⚡ [AdService] preloaded interstitial 즉시 표시');
+        _attachAndShowInterstitial(
+          ad,
+          onAdDismissed: onAdDismissed,
+          onAdFailedToShow: onAdFailedToShow,
+        );
+        return;
+      }
+    } else if (isAdReady) {
+      debugPrint(
+        '⚠️ [AdService] preload 타입 불일치 '
+        '(cached=$_preloadedType, need=$nextAdType) → 폐기 후 로드',
+      );
+      _clearPreloadedAds();
+    }
+
     debugPrint(
-        '🔍 [AdService] 광고 로드 시작: adUnitId=$adUnitId, isRewarded=$isRewarded');
+      '🔍 [AdService] 광고 로드 시작: adUnitId=$adUnitId, isRewarded=$isRewarded',
+    );
 
     if (isRewarded) {
-      // 보상형 광고
       await RewardedAd.load(
         adUnitId: adUnitId,
         request: const AdRequest(),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (ad) {
-            ad.fullScreenContentCallback = FullScreenContentCallback(
-              onAdDismissedFullScreenContent: (ad) {
-                ad.dispose();
-                onAdDismissed();
-              },
-              onAdFailedToShowFullScreenContent: (ad, error) {
-                ad.dispose();
-                onAdFailedToShow?.call();
-              },
-            );
-            ad.show(
-              onUserEarnedReward: (ad, reward) {
-                debugPrint(
-                    '🎁 [AdService] 보상 획득: ${reward.amount} ${reward.type}');
-                onUserEarnedReward?.call(reward);
-              },
+            _attachAndShowRewarded(
+              ad,
+              onAdDismissed: onAdDismissed,
+              onAdFailedToShow: onAdFailedToShow,
+              onUserEarnedReward: onUserEarnedReward,
             );
           },
           onAdFailedToLoad: (error) {
+            debugPrint('❌ [AdService] rewarded 로드 실패: $error');
             onAdFailedToShow?.call();
+            _scheduleNextPreload();
           },
         ),
       );
     } else {
-      // 전면 광고
       await InterstitialAd.load(
         adUnitId: adUnitId,
         request: const AdRequest(),
         adLoadCallback: InterstitialAdLoadCallback(
           onAdLoaded: (ad) {
-            ad.fullScreenContentCallback = FullScreenContentCallback(
-              onAdDismissedFullScreenContent: (ad) {
-                ad.dispose();
-                onAdDismissed();
-              },
-              onAdFailedToShowFullScreenContent: (ad, error) {
-                ad.dispose();
-                onAdFailedToShow?.call();
-              },
+            _attachAndShowInterstitial(
+              ad,
+              onAdDismissed: onAdDismissed,
+              onAdFailedToShow: onAdFailedToShow,
             );
-            ad.show();
           },
           onAdFailedToLoad: (error) {
+            debugPrint('❌ [AdService] interstitial 로드 실패: $error');
             onAdFailedToShow?.call();
+            _scheduleNextPreload();
           },
         ),
       );
