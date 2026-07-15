@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -255,7 +257,24 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
       debugPrint(
         '🔵 [MediaPickerService] _onConfirm asset id=${asset.id} type=${asset.typeInt} title=${asset.title}',
       );
-      final file = await asset.file;
+      File? file;
+      try {
+        // iCloud 전용/미다운로드 에셋은 시뮬레이터에서 CloudPhotoLibraryErrorDomain(1006) 발생 가능
+        file = await asset.file;
+      } catch (e, st) {
+        debugPrint('❌ [MediaPickerService] _onConfirm getFile failed id=${asset.id} error=$e');
+        debugPrint('$st');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       if (file == null) {
         debugPrint('❌ [MediaPickerService] _onConfirm file null id=${asset.id}');
         continue;
