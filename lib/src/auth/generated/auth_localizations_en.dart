@@ -59,7 +59,20 @@ class AuthLocalizationsEn extends AuthLocalizations {
 
   @override
   String get socialLoginRequired =>
-      'This email is registered with social login. Please use social login.';
+      'Unable to sign in with email/password.\n\n• If you signed up with Google, Apple, or Kakao, use that button.\n• If you signed up with email, check your password.\n• After signing in with social login, you can add a password in My Page to enable email login.';
+
+  @override
+  String get emailRequiredForPassword =>
+      'This account has no email, so a password cannot be set.';
+
+  @override
+  String get requiresRecentLogin =>
+      'For security, please sign in again and then change your password.';
+
+  @override
+  String passwordSetFailed(String message) {
+    return 'Failed to set password: $message';
+  }
 
   @override
   String get appleLoginError =>
@@ -82,7 +95,7 @@ class AuthLocalizationsEn extends AuthLocalizations {
 
   @override
   String get emailAlreadyInUse =>
-      'This email is already in use.\n\n• If you signed up with email/password, please check your password.\n• If you signed up with social login (Google, Apple, Kakao), please use that method to log in.';
+      'Unable to sign in with email/password.\n\n• If you signed up with Google, Apple, or Kakao, use that button.\n• If you signed up with email, check your password.\n• After signing in with social login, you can add a password in My Page to enable email login.';
 
   @override
   String get invalidEmail => 'Invalid email format.';
@@ -96,7 +109,8 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get weakPassword => 'Password is too weak.';
 
   @override
-  String get emailAlreadyInUseSignUp => 'This email is already in use.';
+  String get emailAlreadyInUseSignUp =>
+      'This email is already in use. If you signed up with social login, please use that method.';
 
   @override
   String signUpFailed(String message) {

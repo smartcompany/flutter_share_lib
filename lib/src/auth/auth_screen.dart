@@ -136,6 +136,8 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
           return localizations.wrongPassword;
         case 'emailAlreadyInUse':
           return localizations.emailAlreadyInUse;
+        case 'socialLoginRequired':
+          return localizations.socialLoginRequired;
         case 'invalidEmail':
           return localizations.invalidEmail;
         case 'loginFailed':
@@ -144,6 +146,13 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
           return localizations.weakPassword;
         case 'emailAlreadyInUseSignUp':
           return localizations.emailAlreadyInUseSignUp;
+        case 'emailRequiredForPassword':
+          return localizations.emailRequiredForPassword;
+        case 'requiresRecentLogin':
+          return localizations.requiresRecentLogin;
+        case 'passwordSetFailed':
+          return localizations
+              .passwordSetFailed(error.parameters?['message'] ?? '');
         case 'signUpFailed':
           return localizations.signUpFailed(error.parameters?['message'] ?? '');
         case 'kakaoPluginNotRegistered':

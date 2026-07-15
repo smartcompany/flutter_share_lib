@@ -16,13 +16,23 @@
   "emailPasswordRequired": "Please enter your email and password",
   "serverConnectionError": "Unable to connect to server. Please check if the server is running.",
   "invalidEmailPassword": "Invalid email or password.",
-  "socialLoginRequired": "This email is registered with social login. Please use social login.",
+  "socialLoginRequired": "Unable to sign in with email/password.\n\n• If you signed up with Google, Apple, or Kakao, use that button.\n• If you signed up with email, check your password.\n• After signing in with social login, you can add a password in My Page to enable email login.",
+  "emailRequiredForPassword": "This account has no email, so a password cannot be set.",
+  "requiresRecentLogin": "For security, please sign in again and then change your password.",
+  "passwordSetFailed": "Failed to set password: {message}",
+  "@passwordSetFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "appleLoginError": "Apple login failed. Please check if you are logged in with Apple ID in simulator settings.",
   "kakaoSdkNotConfigured": "Kakao SDK is not configured. Please set Kakao app keys in main.dart.",
   "pluginNotRegistered": "Plugin is not registered. Please rebuild the app completely. (Stop and Run again)",
   "accountNotFoundMessage": "This email is not registered. Would you like to sign up?",
   "wrongPassword": "Incorrect password.",
-  "emailAlreadyInUse": "This email is already in use.\n\n• If you signed up with email/password, please check your password.\n• If you signed up with social login (Google, Apple, Kakao), please use that method to log in.",
+  "emailAlreadyInUse": "Unable to sign in with email/password.\n\n• If you signed up with Google, Apple, or Kakao, use that button.\n• If you signed up with email, check your password.\n• After signing in with social login, you can add a password in My Page to enable email login.",
   "invalidEmail": "Invalid email format.",
   "loginFailed": "Login failed: {message}",
   "@loginFailed": {
@@ -33,7 +43,7 @@
     }
   },
   "weakPassword": "Password is too weak.",
-  "emailAlreadyInUseSignUp": "This email is already in use.",
+  "emailAlreadyInUseSignUp": "This email is already in use. If you signed up with social login, please use that method.",
   "signUpFailed": "Sign up failed: {message}",
   "@signUpFailed": {
     "placeholders": {

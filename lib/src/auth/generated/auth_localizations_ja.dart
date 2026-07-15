@@ -58,7 +58,18 @@ class AuthLocalizationsJa extends AuthLocalizations {
 
   @override
   String get socialLoginRequired =>
-      'このメールアドレスはソーシャルログインで登録されています。ソーシャルログインを使用してください。';
+      'メール/パスワードではログインできません。\n\n• Google、Apple、Kakaoで登録した場合は、そのボタンでログインしてください。\n• メールで登録した場合はパスワードを確認してください。\n• ソーシャルログイン後、マイページでパスワードを登録するとメールログインも使えます。';
+
+  @override
+  String get emailRequiredForPassword => 'このアカウントにはメールアドレスがないため、パスワードを設定できません。';
+
+  @override
+  String get requiresRecentLogin => 'セキュリティのため、再度ログインしてからパスワードを変更してください。';
+
+  @override
+  String passwordSetFailed(String message) {
+    return 'パスワードの設定に失敗しました: $message';
+  }
 
   @override
   String get appleLoginError =>
@@ -80,7 +91,7 @@ class AuthLocalizationsJa extends AuthLocalizations {
 
   @override
   String get emailAlreadyInUse =>
-      'このメールアドレスは既に使用されています。\n\n• メール/パスワードで登録した場合は、パスワードを確認してください。\n• ソーシャルログイン（Google、Apple、Kakao）で登録した場合は、その方法でログインしてください。';
+      'メール/パスワードではログインできません。\n\n• Google、Apple、Kakaoで登録した場合は、そのボタンでログインしてください。\n• メールで登録した場合はパスワードを確認してください。\n• ソーシャルログイン後、マイページでパスワードを登録するとメールログインも使えます。';
 
   @override
   String get invalidEmail => 'メールアドレスの形式が正しくありません。';
@@ -94,7 +105,8 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get weakPassword => 'パスワードが弱すぎます。';
 
   @override
-  String get emailAlreadyInUseSignUp => 'このメールアドレスは既に使用されています。';
+  String get emailAlreadyInUseSignUp =>
+      'このメールアドレスは既に使用されています。ソーシャルログインで登録した場合はその方法でログインしてください。';
 
   @override
   String signUpFailed(String message) {

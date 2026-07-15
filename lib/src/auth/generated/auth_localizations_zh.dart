@@ -57,7 +57,19 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get invalidEmailPassword => '电子邮件或密码不正确。';
 
   @override
-  String get socialLoginRequired => '此电子邮件已通过社交登录注册。请使用社交登录。';
+  String get socialLoginRequired =>
+      '无法使用电子邮件/密码登录。\n\n• 如果您使用 Google、Apple 或 Kakao 注册，请使用对应按钮登录。\n• 如果您使用电子邮件注册，请检查密码。\n• 使用社交登录后，可在“我的页面”中设置密码以启用电子邮件登录。';
+
+  @override
+  String get emailRequiredForPassword => '此账户没有电子邮件，无法设置密码。';
+
+  @override
+  String get requiresRecentLogin => '为了安全，请重新登录后再更改密码。';
+
+  @override
+  String passwordSetFailed(String message) {
+    return '设置密码失败: $message';
+  }
 
   @override
   String get appleLoginError => 'Apple登录失败。请检查模拟器设置中是否已登录Apple ID。';
@@ -76,7 +88,7 @@ class AuthLocalizationsZh extends AuthLocalizations {
 
   @override
   String get emailAlreadyInUse =>
-      '此电子邮件已被使用。\n\n• 如果您使用电子邮件/密码注册，请检查您的密码。\n• 如果您使用社交登录（Google、Apple、Kakao）注册，请使用该方法登录。';
+      '无法使用电子邮件/密码登录。\n\n• 如果您使用 Google、Apple 或 Kakao 注册，请使用对应按钮登录。\n• 如果您使用电子邮件注册，请检查密码。\n• 使用社交登录后，可在“我的页面”中设置密码以启用电子邮件登录。';
 
   @override
   String get invalidEmail => '电子邮件格式不正确。';
@@ -90,7 +102,7 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get weakPassword => '密码太弱。';
 
   @override
-  String get emailAlreadyInUseSignUp => '此电子邮件已被使用。';
+  String get emailAlreadyInUseSignUp => '此电子邮件已被使用。如果您使用社交登录注册，请使用该方法登录。';
 
   @override
   String signUpFailed(String message) {

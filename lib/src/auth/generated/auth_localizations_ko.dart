@@ -57,7 +57,19 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get invalidEmailPassword => '이메일 또는 비밀번호가 올바르지 않습니다.';
 
   @override
-  String get socialLoginRequired => '이 이메일은 소셜 로그인으로 가입되었습니다. 소셜 로그인을 사용해주세요.';
+  String get socialLoginRequired =>
+      '이메일/비밀번호로 로그인할 수 없습니다.\n\n• Google, Apple, 카카오로 가입하셨다면 해당 버튼으로 로그인해 주세요.\n• 이메일로 가입하셨다면 비밀번호를 확인해 주세요.\n• 소셜로 로그인한 뒤 마이페이지에서 비밀번호를 등록하면 이메일 로그인도 사용할 수 있습니다.';
+
+  @override
+  String get emailRequiredForPassword => '이 계정에는 이메일이 없어 비밀번호를 설정할 수 없습니다.';
+
+  @override
+  String get requiresRecentLogin => '보안을 위해 다시 로그인한 뒤 비밀번호를 변경해 주세요.';
+
+  @override
+  String passwordSetFailed(String message) {
+    return '비밀번호 설정에 실패했습니다: $message';
+  }
 
   @override
   String get appleLoginError =>
@@ -79,7 +91,7 @@ class AuthLocalizationsKo extends AuthLocalizations {
 
   @override
   String get emailAlreadyInUse =>
-      '이 이메일은 이미 사용 중입니다.\n\n• 이메일/비밀번호로 가입하셨다면 비밀번호를 확인해주세요.\n• 소셜 로그인(구글, 애플, 카카오)으로 가입하셨다면 해당 방법으로 로그인해주세요.';
+      '이메일/비밀번호로 로그인할 수 없습니다.\n\n• Google, Apple, 카카오로 가입하셨다면 해당 버튼으로 로그인해 주세요.\n• 이메일로 가입하셨다면 비밀번호를 확인해 주세요.\n• 소셜로 로그인한 뒤 마이페이지에서 비밀번호를 등록하면 이메일 로그인도 사용할 수 있습니다.';
 
   @override
   String get invalidEmail => '이메일 형식이 올바르지 않습니다.';
@@ -93,7 +105,8 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get weakPassword => '비밀번호가 너무 약합니다.';
 
   @override
-  String get emailAlreadyInUseSignUp => '이미 사용 중인 이메일입니다.';
+  String get emailAlreadyInUseSignUp =>
+      '이미 사용 중인 이메일입니다. 소셜 로그인으로 가입하셨다면 해당 방법으로 로그인해 주세요.';
 
   @override
   String signUpFailed(String message) {

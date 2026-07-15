@@ -56,6 +56,26 @@ class AuthProvider<T> with ChangeNotifier {
   /// 카카오 로그인 시 저장된 kakao_id (프로필 설정 시 전달용)
   String? get kakaoId => _kakaoId;
 
+  /// 현재 계정에 이메일/비밀번호 provider가 연결되어 있는지
+  bool get hasPasswordProvider {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return false;
+    return user.providerData.any((p) => p.providerId == 'password');
+  }
+
+  /// 소셜 로그인 계정에 비밀번호를 새로 연결할 수 있는지
+  /// (Firebase에 이메일이 있고 password provider가 없을 때)
+  bool get canLinkPassword {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) return false;
+    final email = user.email;
+    if (email == null || email.isEmpty) return false;
+    return !hasPasswordProvider;
+  }
+
+  /// 현재 Firebase 계정 이메일 (비밀번호 설정 UI용)
+  String? get currentEmail => _firebaseAuth.currentUser?.email;
+
   /// 로그인 여부. Firebase Auth의 currentUser가 있으면 true.
   bool isLoggedIn() {
     return _firebaseAuth.currentUser != null;
@@ -270,38 +290,32 @@ class AuthProvider<T> with ChangeNotifier {
         debugPrint('❌ [AuthProvider] 비밀번호가 올바르지 않음');
         throw LocalizedException('wrongPassword');
       } else if (e.code == 'invalid-credential') {
-        // invalid-credential은 비밀번호가 틀렸거나 계정이 없을 때 발생할 수 있음
-        // 계정 존재 여부 확인을 위해 회원가입 시도 (이미 존재하면 에러 발생)
+        // enumeration protection: 비번 틀림 / 소셜 전용 / 계정 없음이 모두 invalid-credential.
+        // 계정 유무만 확인한 뒤, 있으면 소셜·비밀번호 안내 / 없으면 회원가입 제안.
         debugPrint(
             '🟡 [AuthProvider] invalid-credential 발생 - 계정 존재 여부 확인 중...');
         try {
-          debugPrint('🟡 [AuthProvider] 계정 존재 여부 확인을 위해 회원가입 시도...');
           await _firebaseAuth.createUserWithEmailAndPassword(
             email: email,
             password: password,
           );
-          // 회원가입 성공 = 계정이 없었음
-          // 하지만 사용자 확인 없이 계정이 생성되었으므로 삭제해야 함
+          // 임시 생성 성공 = 원래 계정 없음 → 삭제 후 회원가입 안내
           debugPrint('✅ [AuthProvider] 계정이 없음 확인 - 임시 계정 삭제 중...');
           final tempUser = _firebaseAuth.currentUser;
           if (tempUser != null) {
             await tempUser.delete();
-            debugPrint('✅ [AuthProvider] 임시 계정 삭제 완료');
           }
           throw AccountNotFoundException('accountNotFoundMessage');
         } on FirebaseAuthException catch (checkError) {
           if (checkError.code == 'email-already-in-use') {
-            // 이메일이 이미 사용 중인 경우
-            // invalid-credential로 이미 실패했으므로, 소셜 로그인으로 가입한 가능성이 높음
-            // 하지만 이메일/비밀번호로 가입한 경우도 있을 수 있으므로 두 가지 모두 안내
-            debugPrint('❌ [AuthProvider] 이메일이 이미 사용 중');
-            throw LocalizedException('emailAlreadyInUse');
+            // 소셜 전용 또는 비밀번호 불일치 — 구별 불가, 제품 안내로 통일
+            debugPrint(
+                '❌ [AuthProvider] 계정은 있으나 이메일/비밀번호 로그인 실패 → 소셜/비밀번호 안내');
+            throw LocalizedException('socialLoginRequired');
           } else if (checkError.code == 'weak-password') {
-            // 비밀번호가 약함
-            debugPrint('❌ [AuthProvider] 비밀번호가 약함');
-            throw LocalizedException('wrongPassword');
+            // 계정은 없을 수 있으나 입력 비밀번호가 약함 → 회원가입 플로우로
+            throw AccountNotFoundException('accountNotFoundMessage');
           } else {
-            // 다른 에러는 계정이 없을 가능성이 높음
             debugPrint('❌ [AuthProvider] 계정 확인 중 에러: ${checkError.code}');
             throw AccountNotFoundException('accountNotFoundMessage');
           }
@@ -324,6 +338,52 @@ class AuthProvider<T> with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       debugPrint('🟡 [AuthProvider] 이메일 로그인 완료 (finally)');
+    }
+  }
+
+  /// 소셜 로그인 계정에 이메일/비밀번호를 연결하거나, 이미 있으면 비밀번호를 변경합니다.
+  /// [canLinkPassword] 또는 [hasPasswordProvider]일 때만 호출하세요.
+  Future<void> setOrUpdatePassword(String password) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw LocalizedException('loginFailed',
+          parameters: {'message': 'Not signed in'});
+    }
+    final email = user.email;
+    if (email == null || email.isEmpty) {
+      throw LocalizedException('emailRequiredForPassword');
+    }
+    if (password.length < 6) {
+      throw LocalizedException('weakPassword');
+    }
+
+    try {
+      if (hasPasswordProvider) {
+        await user.updatePassword(password);
+        debugPrint('✅ [AuthProvider] 비밀번호 변경 완료');
+      } else {
+        final credential = EmailAuthProvider.credential(
+          email: email,
+          password: password,
+        );
+        await user.linkWithCredential(credential);
+        debugPrint('✅ [AuthProvider] 이메일/비밀번호 provider 연결 완료');
+      }
+      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      debugPrint('❌ [AuthProvider] setOrUpdatePassword: ${e.code}');
+      if (e.code == 'weak-password') {
+        throw LocalizedException('weakPassword');
+      } else if (e.code == 'requires-recent-login') {
+        throw LocalizedException('requiresRecentLogin');
+      } else if (e.code == 'provider-already-linked' ||
+          e.code == 'credential-already-in-use' ||
+          e.code == 'email-already-in-use') {
+        throw LocalizedException('emailAlreadyInUseSignUp');
+      } else {
+        throw LocalizedException('passwordSetFailed',
+            parameters: {'message': e.message ?? e.code});
+      }
     }
   }
 
