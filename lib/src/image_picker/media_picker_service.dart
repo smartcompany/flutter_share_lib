@@ -123,9 +123,10 @@ class _ImagePickerPage extends StatefulWidget {
 
 class _ImagePickerPageState extends State<_ImagePickerPage> {
   /// 한 번에 너무 많이 올리면 저용량 기기에서 OOM으로 앱이 종료될 수 있음
-  static const _pageSize = 80;
-  static const _thumbnailSize = 120;
-  static const _loadMoreThreshold = 900.0;
+  static const _pageSize = 40;
+  static const _thumbnailSize = 96;
+  static const _loadMoreThreshold = 480.0;
+  static const _gridCacheExtent = 280.0;
 
   final List<AssetEntity> _assets = [];
   final Set<AssetEntity> _selected = {};
@@ -139,39 +140,65 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   /// setState 전에 동기적으로 막아 스크롤 리스너 동시 호출 방지
   bool _loadMoreLocked = false;
 
+  int? _prevImageCacheSize;
+  int? _prevImageCacheBytes;
+
   @override
   void initState() {
     super.initState();
     _isLimitedAccess = widget.isLimitedAccess;
-    _scrollController.addListener(_onScroll);
+    // 피커 동안 디코드 이미지 캐시 상한을 낮춰 스크롤 시 메모리 회수
+    final imageCache = PaintingBinding.instance.imageCache;
+    _prevImageCacheSize = imageCache.maximumSize;
+    _prevImageCacheBytes = imageCache.maximumSizeBytes;
+    imageCache.maximumSize = 40;
+    imageCache.maximumSizeBytes = 12 << 20; // 12MB
     unawaited(_loadAssets(reset: true));
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _assets.clear();
     _selected.clear();
     _ThumbnailCache.instance.clear();
+    final imageCache = PaintingBinding.instance.imageCache;
+    imageCache.clear();
+    imageCache.clearLiveImages();
+    if (_prevImageCacheSize != null) {
+      imageCache.maximumSize = _prevImageCacheSize!;
+    }
+    if (_prevImageCacheBytes != null) {
+      imageCache.maximumSizeBytes = _prevImageCacheBytes!;
+    }
+    unawaited(PhotoManager.clearFileCache());
     super.dispose();
   }
 
-  void _onScroll() => _maybeLoadMore();
+  /// 사용자가 실제로 스크롤할 때만 다음 페이지 (metrics 변경으로 연쇄 로드 금지)
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is! ScrollUpdateNotification) return false;
+    if (notification.metrics.axis != Axis.vertical) return false;
+    _maybeLoadMore(userScroll: true);
+    return false;
+  }
 
-  void _maybeLoadMore() {
+  void _maybeLoadMore({required bool userScroll}) {
     if (!_hasMore || _isLoading || _isLoadingMore || _loadMoreLocked) return;
     if (_album == null) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     if (!position.hasContentDimensions) return;
 
-    // 화면을 다 채우지 못했거나(maxScrollExtent==0), 하단 근처면 다음 페이지
-    final nearBottom = position.maxScrollExtent <= 0 ||
-        position.pixels >= position.maxScrollExtent - _loadMoreThreshold;
-    if (nearBottom) {
-      unawaited(_loadAssets(reset: false));
+    if (!userScroll) {
+      // 화면을 못 채운 첫 로드 보강만 허용
+      if (position.maxScrollExtent > 0) return;
+    } else {
+      final nearBottom =
+          position.pixels >= position.maxScrollExtent - _loadMoreThreshold;
+      if (!nearBottom) return;
     }
+    unawaited(_loadAssets(reset: false));
   }
 
   Future<void> _openLimitedLibraryPicker() async {
@@ -275,14 +302,13 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
         _loadMoreLocked = false;
       });
 
-      // 첫 페이지가 화면을 못 채우면(스크롤 불가) 다음 페이지를 이어서 로드.
-      // 이미 스크롤 가능한데 하단에 있으면 사용자가 더 내릴 때 리스너가 담당.
+      // 첫 페이지가 화면을 못 채우면(스크롤 불가) 한 번만 이어서 로드
       if (_hasMore) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || !_scrollController.hasClients) return;
           final pos = _scrollController.position;
           if (pos.hasContentDimensions && pos.maxScrollExtent <= 0) {
-            _maybeLoadMore();
+            _maybeLoadMore(userScroll: false);
           }
         });
       }
@@ -532,10 +558,14 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : Stack(
                     children: [
-                      GridView.builder(
+                      NotificationListener<ScrollNotification>(
+                        onNotification: _onScrollNotification,
+                        child: GridView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(2),
-                        addAutomaticKeepAlives: true,
+                        cacheExtent: _gridCacheExtent,
+                        // 화면 밖 셀 State/이미지를 반드시 dispose
+                        addAutomaticKeepAlives: false,
                         addRepaintBoundaries: true,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
@@ -600,6 +630,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
                           );
                         },
                       ),
+                      ),
                       if (_isLoadingMore)
                         const Positioned(
                           left: 0,
@@ -631,12 +662,12 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   }
 }
 
-/// 썸네일 LRU 캐시 — 빌드마다 재디코드/플리커 방지, 메모리 상한 유지
+/// 화면에 보이는 근처만 유지하는 썸네일 LRU — 스크롤로 멀어진 항목은 즉시 폐기
 class _ThumbnailCache {
   _ThumbnailCache._();
   static final _ThumbnailCache instance = _ThumbnailCache._();
 
-  static const int maxEntries = 120;
+  static const int maxEntries = 36;
   final LinkedHashMap<String, typed_data.Uint8List> _map =
       LinkedHashMap<String, typed_data.Uint8List>();
 
@@ -659,7 +690,7 @@ class _ThumbnailCache {
   void clear() => _map.clear();
 }
 
-/// 한 번 로드한 썸네일은 State/캐시에 유지 (FutureBuilder 재생성 금지)
+/// 화면에서 벗어나면 dispose되어 바이트/디코드 이미지를 즉시 해제
 class _AssetThumbnail extends StatefulWidget {
   const _AssetThumbnail({required this.asset, required this.size});
 
@@ -673,7 +704,9 @@ class _AssetThumbnail extends StatefulWidget {
 class _AssetThumbnailState extends State<_AssetThumbnail> {
   typed_data.Uint8List? _bytes;
   bool _loading = false;
-  String? _loadedId;
+  int _loadGen = 0;
+
+  String get _id => '${widget.asset.id}_${widget.size}';
 
   @override
   void initState() {
@@ -686,36 +719,48 @@ class _AssetThumbnailState extends State<_AssetThumbnail> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.asset.id != widget.asset.id ||
         oldWidget.size != widget.size) {
+      _releaseCurrent();
       _resolve();
     }
   }
 
-  void _resolve() {
-    final id = '${widget.asset.id}_${widget.size}';
-    if (_loadedId == id && _bytes != null) return;
+  @override
+  void dispose() {
+    _releaseCurrent();
+    super.dispose();
+  }
 
+  void _releaseCurrent() {
+    // State/디코드 이미지는 버리고, 압축 바이트 LRU는 유지(재진입 시 재디코드 완화)
+    _bytes = null;
+    _loading = false;
+    _loadGen++;
+  }
+
+  void _resolve() {
+    final id = _id;
     final cached = _ThumbnailCache.instance.get(id);
     if (cached != null) {
       _bytes = cached;
-      _loadedId = id;
       _loading = false;
       return;
     }
 
-    _loadedId = id;
     _bytes = null;
     if (_loading) return;
     _loading = true;
-    unawaited(_load(id));
+    final gen = ++_loadGen;
+    unawaited(_load(id, gen));
   }
 
-  Future<void> _load(String id) async {
+  Future<void> _load(String id, int gen) async {
     try {
       final bytes = await widget.asset.thumbnailDataWithSize(
         ThumbnailSize.square(widget.size),
+        quality: 70,
       );
-      if (!mounted) return;
-      if (id != '${widget.asset.id}_${widget.size}') return;
+      if (!mounted || gen != _loadGen) return;
+      if (id != _id) return;
       if (bytes != null && bytes.isNotEmpty) {
         _ThumbnailCache.instance.put(id, bytes);
         setState(() {
@@ -726,7 +771,9 @@ class _AssetThumbnailState extends State<_AssetThumbnail> {
         setState(() => _loading = false);
       }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && gen == _loadGen) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -736,11 +783,16 @@ class _AssetThumbnailState extends State<_AssetThumbnail> {
     if (bytes == null || bytes.isEmpty) {
       return ColoredBox(color: Theme.of(context).dividerColor);
     }
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final px = (widget.size * dpr).round().clamp(64, 256);
     return Image.memory(
       bytes,
       fit: BoxFit.cover,
-      gaplessPlayback: true,
+      gaplessPlayback: false,
       filterQuality: FilterQuality.low,
+      // 디코드 해상도 제한 → 화면 밖 dispose 시 메모리 회수 용이
+      cacheWidth: px,
+      cacheHeight: px,
     );
   }
 }
