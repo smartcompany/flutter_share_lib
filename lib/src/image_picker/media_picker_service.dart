@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
+import 'dart:typed_data' as typed_data;
 
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +9,6 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'dart:typed_data' as typed_data;
 
 /// 앨범 그리드 + 왼쪽 첫 칸 촬영 아이콘 스타일의 미디어 피커 서비스
 ///
@@ -84,6 +86,7 @@ class MediaPickerService {
           maxHeight: maxHeight,
           quality: quality,
           compressFailureMessage: compressFailureMessage,
+          isLimitedAccess: ps.isLimited,
         ),
       ),
     );
@@ -103,6 +106,7 @@ class _ImagePickerPage extends StatefulWidget {
     required this.maxHeight,
     required this.quality,
     required this.compressFailureMessage,
+    required this.isLimitedAccess,
   });
 
   final int maxCount;
@@ -111,48 +115,177 @@ class _ImagePickerPage extends StatefulWidget {
   final int maxHeight;
   final int quality;
   final String compressFailureMessage;
+  final bool isLimitedAccess;
 
   @override
   State<_ImagePickerPage> createState() => _ImagePickerPageState();
 }
 
 class _ImagePickerPageState extends State<_ImagePickerPage> {
+  /// 한 번에 너무 많이 올리면 저용량 기기에서 OOM으로 앱이 종료될 수 있음
+  static const _pageSize = 80;
+  static const _thumbnailSize = 120;
+  static const _loadMoreThreshold = 900.0;
+
   final List<AssetEntity> _assets = [];
   final Set<AssetEntity> _selected = {};
+  final ScrollController _scrollController = ScrollController();
+  AssetPathEntity? _album;
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  bool _isLimitedAccess = false;
+  bool _isConfirming = false;
+  /// setState 전에 동기적으로 막아 스크롤 리스너 동시 호출 방지
+  bool _loadMoreLocked = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAssets();
+    _isLimitedAccess = widget.isLimitedAccess;
+    _scrollController.addListener(_onScroll);
+    unawaited(_loadAssets(reset: true));
   }
 
-  Future<void> _loadAssets() async {
-    debugPrint('🔵 [MediaPickerService] _loadAssets start');
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _assets.clear();
+    _selected.clear();
+    _ThumbnailCache.instance.clear();
+    super.dispose();
+  }
+
+  void _onScroll() => _maybeLoadMore();
+
+  void _maybeLoadMore() {
+    if (!_hasMore || _isLoading || _isLoadingMore || _loadMoreLocked) return;
+    if (_album == null) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) return;
+
+    // 화면을 다 채우지 못했거나(maxScrollExtent==0), 하단 근처면 다음 페이지
+    final nearBottom = position.maxScrollExtent <= 0 ||
+        position.pixels >= position.maxScrollExtent - _loadMoreThreshold;
+    if (nearBottom) {
+      unawaited(_loadAssets(reset: false));
+    }
+  }
+
+  Future<void> _openLimitedLibraryPicker() async {
     try {
-      final paths = await PhotoManager.getAssetPathList(
-        hasAll: true,
-        onlyAll: true,
-        type: RequestType.image,
+      await PhotoManager.presentLimited();
+      if (!mounted) return;
+      await _loadAssets(reset: true);
+      final state = await PhotoManager.requestPermissionExtend(
+        requestOption: const PermissionRequestOption(
+          androidPermission: AndroidPermission(
+            type: RequestType.image,
+            mediaLocation: false,
+          ),
+        ),
       );
-      if (paths.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _isLimitedAccess = state.isLimited;
+      });
+    } catch (e, st) {
+      debugPrint('❌ [MediaPickerService] presentLimited failed: $e\n$st');
+    }
+  }
+
+  Future<void> _loadAssets({required bool reset}) async {
+    if (reset) {
+      debugPrint('🔵 [MediaPickerService] _loadAssets start');
+      _loadMoreLocked = false;
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _isLoadingMore = false;
+          _hasMore = true;
+          _assets.clear();
+        });
+      }
+    } else {
+      if (_loadMoreLocked || _isLoadingMore || !_hasMore) return;
+      _loadMoreLocked = true;
+      _isLoadingMore = true;
+      if (mounted) setState(() {});
+    }
+
+    try {
+      AssetPathEntity? resolvedAlbum = _album;
+      if (reset || resolvedAlbum == null) {
+        final paths = await PhotoManager.getAssetPathList(
+          hasAll: true,
+          onlyAll: true,
+          type: RequestType.image,
+        );
+        resolvedAlbum = paths.isEmpty ? null : paths.first;
+      }
+
+      if (resolvedAlbum == null) {
         debugPrint('🟡 [MediaPickerService] no album paths');
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
+          _isLoadingMore = false;
+          _hasMore = false;
+          _loadMoreLocked = false;
         });
         return;
       }
-      final recent = paths.first;
-      final assets = await recent.getAssetListRange(start: 0, end: 200);
+
+      final total = await resolvedAlbum.assetCountAsync;
+      final start = reset ? 0 : _assets.length;
+      if (start >= total) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+          _isLoadingMore = false;
+          _hasMore = false;
+          _loadMoreLocked = false;
+        });
+        return;
+      }
+
+      final end = (start + _pageSize).clamp(0, total);
+      final batch =
+          await resolvedAlbum.getAssetListRange(start: start, end: end);
       debugPrint(
-        '🔵 [MediaPickerService] _loadAssets success album=${recent.name} count=${assets.length}',
+        '🔵 [MediaPickerService] _loadAssets album=${resolvedAlbum.name} '
+        'range=$start..$end total=$total batch=${batch.length}',
       );
+
+      if (!mounted) return;
       setState(() {
-        _assets
-          ..clear()
-          ..addAll(assets);
+        _album = resolvedAlbum;
+        if (reset) {
+          _assets
+            ..clear()
+            ..addAll(batch);
+        } else {
+          _assets.addAll(batch);
+        }
         _isLoading = false;
+        _isLoadingMore = false;
+        _hasMore = end < total;
+        _loadMoreLocked = false;
       });
+
+      // 첫 페이지가 화면을 못 채우면(스크롤 불가) 다음 페이지를 이어서 로드.
+      // 이미 스크롤 가능한데 하단에 있으면 사용자가 더 내릴 때 리스너가 담당.
+      if (_hasMore) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          final pos = _scrollController.position;
+          if (pos.hasContentDimensions && pos.maxScrollExtent <= 0) {
+            _maybeLoadMore();
+          }
+        });
+      }
     } catch (e, st) {
       debugPrint('❌ [MediaPickerService] 이미지 로드 실패: $e\n$st');
       if (mounted) {
@@ -160,8 +293,11 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           const SnackBar(content: Text('이미지를 불러오지 못했습니다')),
         );
       }
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _isLoadingMore = false;
+        _loadMoreLocked = false;
       });
     }
   }
@@ -220,34 +356,54 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
   }
 
   void _onAssetTap(AssetEntity asset) {
-    setState(() {
-      if (_selected.contains(asset)) {
+    if (_isConfirming) return;
+
+    var confirmAfterTap = false;
+
+    if (_selected.contains(asset)) {
+      setState(() {
         debugPrint('🔵 [MediaPickerService] deselect asset id=${asset.id}');
         _selected.remove(asset);
-      } else {
-        if (_selected.length >= widget.maxCount) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('최대 ${widget.maxCount}장까지 선택할 수 있습니다')),
-          );
-          return;
-        }
-        _selected.add(asset);
-        debugPrint(
-          '🔵 [MediaPickerService] select asset id=${asset.id} selected=${_selected.length}/${widget.maxCount}',
-        );
-        // 1장만 선택하는 경우(프로필/배경 사진 등) 클릭 즉시 적용
-        if (widget.maxCount == 1) {
-          _onConfirm();
-        }
-      }
+      });
+      return;
+    }
+
+    if (_selected.length >= widget.maxCount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('최대 ${widget.maxCount}장까지 선택할 수 있습니다')),
+      );
+      return;
+    }
+
+    setState(() {
+      _selected.add(asset);
+      debugPrint(
+        '🔵 [MediaPickerService] select asset id=${asset.id} selected=${_selected.length}/${widget.maxCount}',
+      );
     });
+
+    // 1장만 선택(프로필/배경): setState 밖에서 confirm — setState 안 async 호출 시 UI 멈춤
+    if (widget.maxCount == 1) {
+      confirmAfterTap = true;
+    }
+
+    if (confirmAfterTap) {
+      unawaited(_onConfirm());
+    }
   }
 
   Future<void> _onConfirm() async {
+    if (_isConfirming) return;
+    _isConfirming = true;
+    if (mounted) {
+      setState(() {});
+    }
+
     debugPrint('🔵 [MediaPickerService] _onConfirm start selected=${_selected.length}');
     if (_selected.isEmpty) {
       debugPrint('🟡 [MediaPickerService] _onConfirm empty selection');
-      Navigator.of(context).pop(<XFile>[]);
+      _isConfirming = false;
+      if (mounted) Navigator.of(context).pop(<XFile>[]);
       return;
     }
     final dir = await getTemporaryDirectory();
@@ -273,6 +429,8 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
             ),
           );
         }
+        _isConfirming = false;
+        if (mounted) setState(() {});
         return;
       }
       if (file == null) {
@@ -302,6 +460,8 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
               SnackBar(content: Text(widget.compressFailureMessage)),
             );
           }
+          _isConfirming = false;
+          if (mounted) setState(() {});
           return;
         }
       } else {
@@ -315,14 +475,20 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
     Navigator.of(context).pop(files);
   }
 
+  Future<void> _onConfirmPressed() async {
+    await _onConfirm();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Stack(
+      children: [
+        Scaffold(
       appBar: AppBar(
         title: const Text('사진 선택'),
         actions: [
           TextButton(
-            onPressed: _selected.isEmpty ? null : _onConfirm,
+            onPressed: (_selected.isEmpty || _isConfirming) ? null : _onConfirmPressed,
             child: Text(
               _selected.isEmpty
                   ? '완료'
@@ -336,92 +502,245 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : GridView.builder(
-              padding: const EdgeInsets.all(2),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 2,
-                mainAxisSpacing: 2,
-              ),
-              itemCount: _assets.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  final theme = Theme.of(context);
-                  return GestureDetector(
-                    onTap: _onCameraTap,
-                    child: Container(
-                      color: theme.colorScheme.surface,
-                      child: Center(
-                        child: Icon(
-                          Icons.camera_enhance,
-                          size: 40,
-                          color: theme.colorScheme.onSurface,
-                        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_isLimitedAccess)
+            Material(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
-                  );
-                }
-                final asset = _assets[index - 1];
-                final selected = _selected.contains(asset);
-                return GestureDetector(
-                  onTap: () => _onAssetTap(asset),
-                  child: Stack(
-                    fit: StackFit.expand,
+                    TextButton(
+                      onPressed: _openLimitedLibraryPicker,
+                      child: const Text('더 선택'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
                     children: [
-                      _AssetThumbnail(
-                        asset: asset,
-                        size: 300,
-                      ),
-                      if (selected)
-                        Container(
-                          color: Colors.black26,
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: Icon(
-                                Icons.check_circle,
-                                color:
-                                    Theme.of(context).colorScheme.primaryContainer,
+                      GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(2),
+                        addAutomaticKeepAlives: true,
+                        addRepaintBoundaries: true,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 2,
+                          mainAxisSpacing: 2,
+                        ),
+                        // 로딩 셀을 itemCount에 넣지 않음 → 페이지 추가 시 레이아웃 점프 감소
+                        itemCount: _assets.length + 1,
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            final theme = Theme.of(context);
+                            return GestureDetector(
+                              onTap: _isConfirming ? null : _onCameraTap,
+                              child: Container(
+                                color: theme.colorScheme.surface,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.camera_enhance,
+                                    size: 40,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
+                            );
+                          }
+
+                          final asset = _assets[index - 1];
+                          final selected = _selected.contains(asset);
+                          return KeyedSubtree(
+                            key: ValueKey<String>(asset.id),
+                            child: GestureDetector(
+                              onTap: _isConfirming
+                                  ? null
+                                  : () => _onAssetTap(asset),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  _AssetThumbnail(
+                                    asset: asset,
+                                    size: _thumbnailSize,
+                                  ),
+                                  if (selected)
+                                    Container(
+                                      color: Colors.black26,
+                                      child: Align(
+                                        alignment: Alignment.topRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: Icon(
+                                            Icons.check_circle,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      if (_isLoadingMore)
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 12,
+                          child: Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           ),
                         ),
                     ],
                   ),
-                );
-              },
+          ),
+        ],
+      ),
+        ),
+        if (_isConfirming)
+          const ColoredBox(
+            color: Color(0x66000000),
+            child: Center(
+              child: CircularProgressIndicator(),
             ),
+          ),
+      ],
     );
   }
 }
 
-/// photo_manager만 사용해 썸네일 표시 (photo_manager_image_provider 미사용)
-class _AssetThumbnail extends StatelessWidget {
+/// 썸네일 LRU 캐시 — 빌드마다 재디코드/플리커 방지, 메모리 상한 유지
+class _ThumbnailCache {
+  _ThumbnailCache._();
+  static final _ThumbnailCache instance = _ThumbnailCache._();
+
+  static const int maxEntries = 120;
+  final LinkedHashMap<String, typed_data.Uint8List> _map =
+      LinkedHashMap<String, typed_data.Uint8List>();
+
+  typed_data.Uint8List? get(String id) {
+    final value = _map.remove(id);
+    if (value != null) {
+      _map[id] = value;
+    }
+    return value;
+  }
+
+  void put(String id, typed_data.Uint8List bytes) {
+    _map.remove(id);
+    _map[id] = bytes;
+    while (_map.length > maxEntries) {
+      _map.remove(_map.keys.first);
+    }
+  }
+
+  void clear() => _map.clear();
+}
+
+/// 한 번 로드한 썸네일은 State/캐시에 유지 (FutureBuilder 재생성 금지)
+class _AssetThumbnail extends StatefulWidget {
   const _AssetThumbnail({required this.asset, required this.size});
 
   final AssetEntity asset;
   final int size;
 
   @override
+  State<_AssetThumbnail> createState() => _AssetThumbnailState();
+}
+
+class _AssetThumbnailState extends State<_AssetThumbnail> {
+  typed_data.Uint8List? _bytes;
+  bool _loading = false;
+  String? _loadedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AssetThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.asset.id != widget.asset.id ||
+        oldWidget.size != widget.size) {
+      _resolve();
+    }
+  }
+
+  void _resolve() {
+    final id = '${widget.asset.id}_${widget.size}';
+    if (_loadedId == id && _bytes != null) return;
+
+    final cached = _ThumbnailCache.instance.get(id);
+    if (cached != null) {
+      _bytes = cached;
+      _loadedId = id;
+      _loading = false;
+      return;
+    }
+
+    _loadedId = id;
+    _bytes = null;
+    if (_loading) return;
+    _loading = true;
+    unawaited(_load(id));
+  }
+
+  Future<void> _load(String id) async {
+    try {
+      final bytes = await widget.asset.thumbnailDataWithSize(
+        ThumbnailSize.square(widget.size),
+      );
+      if (!mounted) return;
+      if (id != '${widget.asset.id}_${widget.size}') return;
+      if (bytes != null && bytes.isNotEmpty) {
+        _ThumbnailCache.instance.put(id, bytes);
+        setState(() {
+          _bytes = bytes;
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<typed_data.Uint8List?>(
-      future: asset.thumbnailDataWithSize(ThumbnailSize.square(size)),
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        if (bytes == null || bytes.isEmpty) {
-          return Container(
-            color: Theme.of(context).dividerColor,
-            child: const Icon(Icons.image_not_supported),
-          );
-        }
-        return Image.memory(
-          bytes,
-          fit: BoxFit.cover,
-        );
-      },
+    final bytes = _bytes;
+    if (bytes == null || bytes.isEmpty) {
+      return ColoredBox(color: Theme.of(context).dividerColor);
+    }
+    return Image.memory(
+      bytes,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.low,
     );
   }
 }
