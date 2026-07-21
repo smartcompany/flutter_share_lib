@@ -253,6 +253,7 @@ class AdService {
       }();
 
       debugPrint('🔍 [AdService] 설정 로드 완료:');
+      debugPrint('  - down_load_url: $_downloadUrl');
       debugPrint('  - useAdsConfig: $_useAdsConfig');
       debugPrint('  - adsConfig: $_adsConfig');
       debugPrint('  - initialAdId: $_initialAdId');

@@ -31,6 +31,7 @@
 library share_lib;
 
 export 'src/share_service.dart';
+export 'src/share_sheet.dart';
 export 'src/ad_service.dart';
 export 'src/force_update_service.dart';
 export 'src/force_update_gate.dart';
