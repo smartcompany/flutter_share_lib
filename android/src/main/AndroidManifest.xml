@@ -1,3 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.smartcompany.share_lib">
+    <application>
+        <provider
+            android:name="com.smartcompany.share_lib.ShareLibFileProvider"
+            android:authorities="${applicationId}.share_lib.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/share_lib_file_paths" />
+        </provider>
+    </application>
 </manifest>
