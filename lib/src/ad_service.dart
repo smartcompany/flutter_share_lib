@@ -46,7 +46,8 @@ class AdService {
   String? _bannerAdId;
   String? _downloadUrl;
 
-  // ios_ads 또는 android_ads 설정 파싱 결과
+  // ios_ads / android_ads 키 → ref.{platform} 의 동일 키로 유닛 ID 조회
+  Map<String, String> _adUnitIdByType = {};
   Map<String, int> _adsConfig = {}; // {"initial_ad": 10, "rewarded_ad": 1}
   bool _useAdsConfig = false;
 
@@ -70,6 +71,22 @@ class AdService {
   /// 다음에 쓸 광고가 이미 로드되어 있으면 true.
   bool get isAdReady =>
       _preloadedRewarded != null || _preloadedInterstitial != null;
+
+  /// config 키 이름에 `rewarded` 가 포함되면 RewardedAd, 아니면 InterstitialAd.
+  static bool _isRewardedAdType(String adType) =>
+      adType.toLowerCase().contains('rewarded');
+
+  void _syncLegacyAdIdFields() {
+    _initialAdId = null;
+    _rewardedAdId = null;
+    for (final entry in _adUnitIdByType.entries) {
+      if (_isRewardedAdType(entry.key)) {
+        _rewardedAdId ??= entry.value;
+      } else {
+        _initialAdId ??= entry.value;
+      }
+    }
+  }
 
   /// baseUrl 설정
   ///
@@ -210,29 +227,18 @@ class AdService {
           }
 
           if (_useAdsConfig) {
-            // ios_ads/android_ads 사용 시: 모든 광고 타입의 ID를 동적으로 가져오기
-            // _adsConfig에 있는 모든 키에 대해 ID를 가져옴
-            _initialAdId = platformRef['initial_ad'] as String?;
-            _rewardedAdId = platformRef['rewarded_ad'] as String?;
-
-            // _adsConfig에 있는 다른 광고 타입들도 지원 (예: rewarded_test)
+            _adUnitIdByType = {};
             for (final adType in _adsConfig.keys) {
-              if (adType == 'initial_ad') {
-                _initialAdId = platformRef['initial_ad'] as String?;
-              } else if (adType == 'rewarded_ad') {
-                _rewardedAdId = platformRef['rewarded_ad'] as String?;
-              } else if (adType == 'rewarded_test') {
-                // rewarded_test는 rewarded_ad ID로 사용
-                _rewardedAdId =
-                    platformRef['rewarded_test'] as String? ?? _rewardedAdId;
-              } else if (adType == 'interstitial_ad') {
-                _initialAdId =
-                    platformRef['interstitial_ad'] as String? ?? _initialAdId;
+              final raw = platformRef[adType];
+              if (raw is String && raw.trim().isNotEmpty) {
+                _adUnitIdByType[adType] = raw.trim();
               }
             }
+            _syncLegacyAdIdFields();
           } else {
             // 기존 방식: _adsType에 따라 하나만 가져오기
             _rewardedAdId = platformRef[_adsType] as String?;
+            _initialAdId = _rewardedAdId;
           }
         }
       }
@@ -256,11 +262,13 @@ class AdService {
       debugPrint('  - down_load_url: $_downloadUrl');
       debugPrint('  - useAdsConfig: $_useAdsConfig');
       debugPrint('  - adsConfig: $_adsConfig');
+      debugPrint('  - adUnitIdByType: $_adUnitIdByType');
       debugPrint('  - initialAdId: $_initialAdId');
       debugPrint('  - rewardedAdId: $_rewardedAdId');
       debugPrint('  - adsType: $_adsType');
 
-      final hasAdId = _rewardedAdId != null && _rewardedAdId!.isNotEmpty ||
+      final hasAdId = _adUnitIdByType.values.any((id) => id.isNotEmpty) ||
+          _rewardedAdId != null && _rewardedAdId!.isNotEmpty ||
           _initialAdId != null && _initialAdId!.isNotEmpty ||
           _bannerAdId != null && _bannerAdId!.isNotEmpty;
       debugPrint('🔍 [AdService] 광고 ID 존재 여부: $hasAdId');
@@ -387,14 +395,14 @@ class AdService {
   }
 
   ({String? adUnitId, bool isRewarded}) _resolveAdUnit(String? adType) {
-    if (_useAdsConfig) {
-      if (adType == 'rewarded_ad' || adType == 'rewarded_test') {
-        return (adUnitId: _rewardedAdId, isRewarded: true);
-      }
-      if (adType == 'initial_ad' || adType == 'interstitial_ad') {
-        return (adUnitId: _initialAdId, isRewarded: false);
-      }
+    if (adType == null) {
       return (adUnitId: null, isRewarded: false);
+    }
+    if (_useAdsConfig) {
+      return (
+        adUnitId: _adUnitIdByType[adType],
+        isRewarded: _isRewardedAdType(adType),
+      );
     }
     return (
       adUnitId: _rewardedAdId,
@@ -526,30 +534,15 @@ class AdService {
       return;
     }
 
-    String? adUnitId;
-
-    if (_useAdsConfig) {
-      // ios_ads/android_ads 설정 사용
-      if (nextAdType == 'initial_ad' || nextAdType == 'interstitial_ad') {
-        adUnitId = _initialAdId;
-      } else {
-        // 보상형 광고 타입이면 showRewardedAd를 호출해야 함
-        debugPrint(
-            '⚠️ [AdService] _showInterstitialAd 호출되었지만 보상형 광고 타입입니다: $nextAdType');
-        debugPrint('⚠️ [AdService] _showRewardedAd를 호출해야 합니다.');
-        onAdDismissed();
-        return;
-      }
-    } else {
-      // 기존 방식: _adsType이 rewarded_ad가 아니면 전면 광고
-      if (_adsType == 'rewarded_ad') {
-        debugPrint('⚠️ [AdService] _showInterstitialAd 호출되었지만 보상형 광고 타입입니다.');
-        debugPrint('⚠️ [AdService] _showRewardedAd를 호출해야 합니다.');
-        onAdDismissed();
-        return;
-      }
-      adUnitId = _initialAdId;
+    final resolved = _resolveAdUnit(nextAdType);
+    if (resolved.isRewarded) {
+      debugPrint(
+        '⚠️ [AdService] _showInterstitialAd 호출되었지만 보상형 광고 타입입니다: $nextAdType',
+      );
+      onAdDismissed();
+      return;
     }
+    final adUnitId = resolved.adUnitId;
 
     if (adUnitId == null || adUnitId.isEmpty) {
       // If no ad ID, just proceed
@@ -611,30 +604,15 @@ class AdService {
       return;
     }
 
-    String? adUnitId;
-
-    if (_useAdsConfig) {
-      // ios_ads/android_ads 설정 사용
-      if (nextAdType == 'rewarded_ad' || nextAdType == 'rewarded_test') {
-        adUnitId = _rewardedAdId;
-      } else {
-        // 전면 광고 타입이면 showInterstitialAd를 호출해야 함
-        debugPrint(
-            '⚠️ [AdService] showRewardedAd 호출되었지만 전면 광고 타입입니다: $nextAdType');
-        debugPrint('⚠️ [AdService] showInterstitialAd를 호출해야 합니다.');
-        onAdDismissed();
-        return;
-      }
-    } else {
-      // 기존 방식: _adsType이 rewarded_ad여야 함
-      if (_adsType != 'rewarded_ad') {
-        debugPrint('⚠️ [AdService] _showRewardedAd 호출되었지만 보상형 광고 타입이 아닙니다.');
-        debugPrint('⚠️ [AdService] _showInterstitialAd를 호출해야 합니다.');
-        onAdDismissed();
-        return;
-      }
-      adUnitId = _rewardedAdId;
+    final resolved = _resolveAdUnit(nextAdType);
+    if (!resolved.isRewarded) {
+      debugPrint(
+        '⚠️ [AdService] showRewardedAd 호출되었지만 전면 광고 타입입니다: $nextAdType',
+      );
+      onAdDismissed();
+      return;
     }
+    final adUnitId = resolved.adUnitId;
 
     if (adUnitId == null || adUnitId.isEmpty) {
       // If no ad ID, just proceed
@@ -681,19 +659,20 @@ class AdService {
     final preloaded = _preloadedType;
     if (preloaded == null) return false;
     if (preloaded == nextAdType) return true;
-    final rewarded = {'rewarded_ad', 'rewarded_test'};
-    final interstitial = {'initial_ad', 'interstitial_ad'};
-    return (rewarded.contains(preloaded) && rewarded.contains(nextAdType)) ||
-        (interstitial.contains(preloaded) && interstitial.contains(nextAdType));
+    return _isRewardedAdType(preloaded) == _isRewardedAdType(nextAdType);
   }
 
   void _attachAndShowRewarded(
     RewardedAd ad, {
     required VoidCallback onAdDismissed,
     VoidCallback? onAdFailedToShow,
+    VoidCallback? onAdShown,
     Function(RewardItem)? onUserEarnedReward,
   }) {
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        onAdShown?.call();
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         onAdDismissed();
@@ -717,8 +696,12 @@ class AdService {
     InterstitialAd ad, {
     required VoidCallback onAdDismissed,
     VoidCallback? onAdFailedToShow,
+    VoidCallback? onAdShown,
   }) {
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        onAdShown?.call();
+      },
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         onAdDismissed();
@@ -744,6 +727,7 @@ class AdService {
   Future<void> showAd({
     required VoidCallback onAdDismissed,
     VoidCallback? onAdFailedToShow,
+    VoidCallback? onAdShown,
     Function(RewardItem)? onUserEarnedReward,
   }) async {
     debugPrint('🔍 [AdService] showAd 호출 (자동 타입 결정)');
@@ -786,6 +770,7 @@ class AdService {
           ad,
           onAdDismissed: onAdDismissed,
           onAdFailedToShow: onAdFailedToShow,
+          onAdShown: onAdShown,
           onUserEarnedReward: onUserEarnedReward,
         );
         return;
@@ -799,6 +784,7 @@ class AdService {
           ad,
           onAdDismissed: onAdDismissed,
           onAdFailedToShow: onAdFailedToShow,
+          onAdShown: onAdShown,
         );
         return;
       }
@@ -824,6 +810,7 @@ class AdService {
               ad,
               onAdDismissed: onAdDismissed,
               onAdFailedToShow: onAdFailedToShow,
+              onAdShown: onAdShown,
               onUserEarnedReward: onUserEarnedReward,
             );
           },
@@ -844,6 +831,7 @@ class AdService {
               ad,
               onAdDismissed: onAdDismissed,
               onAdFailedToShow: onAdFailedToShow,
+              onAdShown: onAdShown,
             );
           },
           onAdFailedToLoad: (error) {
