@@ -83,5 +83,56 @@
   "send": "送信",
   "passwordResetTitle": "パスワードリセット",
   "passwordResetMessage": "メールアドレスを入力すると、パスワードリセットリンクを送信します。",
-  "pleaseEnterEmail": "メールアドレスを入力してください。"
+  "pleaseEnterEmail": "メールアドレスを入力してください。",
+  "photoSelectTitle": "写真を選択",
+  "photoSelectDone": "完了",
+  "photoSelectDoneCount": "完了 ({count}/{max})",
+  "@photoSelectDoneCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "photoPermissionDenied": "フォトライブラリへのアクセスが必要です。",
+  "photoCompressFailed": "画像の圧縮に失敗しました。",
+  "photoCameraUnavailable": "カメラを使用できません。",
+  "photoMaxSelection": "最大 {maxCount} 枚まで選択できます。",
+  "@photoMaxSelection": {
+    "placeholders": {
+      "maxCount": {"type": "int"}
+    }
+  },
+  "photoLoadFailed": "画像を読み込めませんでした。",
+  "photoIcloudLoadFailed": "写真を読み込めませんでした。端末に保存された写真を選ぶか、実機でもう一度お試しください。",
+  "photoLimitedAccessBanner": "選択した写真のみ表示されます。ライブラリ全体を使うには、さらに選択するか設定で「すべての写真」を許可してください。",
+  "photoSelectMore": "さらに選択",
+  "shareSheetTitle": "共有",
+  "shareKakaoLabel": "カカオトークで共有",
+  "shareSystemLabel": "ほかのアプリで共有",
+  "shareCopyLabel": "リンクをコピー",
+  "shareCopiedMessage": "リンクをコピーしました",
+  "shareFailedMessage": "共有に失敗しました",
+  "shareOpenInApp": "アプリで開く",
+  "shareSubjectDefault": "共有",
+  "mapPickerTitle": "マップアプリを選択",
+  "mapNoAppsAvailable": "利用できるマップアプリがありません。",
+  "mapKakao": "カカオマップ",
+  "mapNaver": "NAVERマップ",
+  "mapGoogle": "Googleマップ",
+  "mapApple": "Appleマップ",
+  "forceUpdateTitle": "アップデートが必要です",
+  "forceUpdateMessage": "アプリを使い続けるには最新版へのアップデートが必要です。\n（現在 {current} → 必要 {required}）",
+  "@forceUpdateMessage": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "required": {"type": "String"}
+    }
+  },
+  "forceUpdateButton": "アップデートする",
+  "errorOccurred": "エラー: {detail}",
+  "@errorOccurred": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  }
 }

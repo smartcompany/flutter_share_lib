@@ -437,6 +437,180 @@ abstract class AuthLocalizations {
   /// In ko, this message translates to:
   /// **'이메일을 입력해주세요.'**
   String get pleaseEnterEmail;
+
+  /// No description provided for @photoSelectTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 선택'**
+  String get photoSelectTitle;
+
+  /// No description provided for @photoSelectDone.
+  ///
+  /// In ko, this message translates to:
+  /// **'완료'**
+  String get photoSelectDone;
+
+  /// No description provided for @photoSelectDoneCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'완료 ({count}/{max})'**
+  String photoSelectDoneCount(int count, int max);
+
+  /// No description provided for @photoPermissionDenied.
+  ///
+  /// In ko, this message translates to:
+  /// **'앨범 접근 권한이 필요합니다'**
+  String get photoPermissionDenied;
+
+  /// No description provided for @photoCompressFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 압축 실패'**
+  String get photoCompressFailed;
+
+  /// No description provided for @photoCameraUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'카메라를 사용할 수 없습니다'**
+  String get photoCameraUnavailable;
+
+  /// No description provided for @photoMaxSelection.
+  ///
+  /// In ko, this message translates to:
+  /// **'최대 {maxCount}장까지 선택할 수 있습니다'**
+  String photoMaxSelection(int maxCount);
+
+  /// No description provided for @photoLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지를 불러오지 못했습니다'**
+  String get photoLoadFailed;
+
+  /// No description provided for @photoIcloudLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.'**
+  String get photoIcloudLoadFailed;
+
+  /// No description provided for @photoLimitedAccessBanner.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.'**
+  String get photoLimitedAccessBanner;
+
+  /// No description provided for @photoSelectMore.
+  ///
+  /// In ko, this message translates to:
+  /// **'더 선택'**
+  String get photoSelectMore;
+
+  /// No description provided for @shareSheetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'공유하기'**
+  String get shareSheetTitle;
+
+  /// No description provided for @shareKakaoLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'카카오톡으로 공유'**
+  String get shareKakaoLabel;
+
+  /// No description provided for @shareSystemLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 앱으로 공유'**
+  String get shareSystemLabel;
+
+  /// No description provided for @shareCopyLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크 복사'**
+  String get shareCopyLabel;
+
+  /// No description provided for @shareCopiedMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'링크를 복사했어요'**
+  String get shareCopiedMessage;
+
+  /// No description provided for @shareFailedMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'공유에 실패했어요'**
+  String get shareFailedMessage;
+
+  /// No description provided for @shareOpenInApp.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱에서 열기'**
+  String get shareOpenInApp;
+
+  /// No description provided for @shareSubjectDefault.
+  ///
+  /// In ko, this message translates to:
+  /// **'공유'**
+  String get shareSubjectDefault;
+
+  /// No description provided for @mapPickerTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'지도 앱 선택'**
+  String get mapPickerTitle;
+
+  /// No description provided for @mapNoAppsAvailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용 가능한 지도 앱이 없습니다.'**
+  String get mapNoAppsAvailable;
+
+  /// No description provided for @mapKakao.
+  ///
+  /// In ko, this message translates to:
+  /// **'카카오맵'**
+  String get mapKakao;
+
+  /// No description provided for @mapNaver.
+  ///
+  /// In ko, this message translates to:
+  /// **'네이버 지도'**
+  String get mapNaver;
+
+  /// No description provided for @mapGoogle.
+  ///
+  /// In ko, this message translates to:
+  /// **'구글 지도'**
+  String get mapGoogle;
+
+  /// No description provided for @mapApple.
+  ///
+  /// In ko, this message translates to:
+  /// **'Apple 지도'**
+  String get mapApple;
+
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'업데이트가 필요합니다'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @forceUpdateMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'계속 사용하려면 최신 버전으로 업데이트해 주세요.\n(현재 {current} → 필요 {required})'**
+  String forceUpdateMessage(String current, String required);
+
+  /// No description provided for @forceUpdateButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'업데이트하기'**
+  String get forceUpdateButton;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In ko, this message translates to:
+  /// **'에러 발생: {detail}'**
+  String errorOccurred(String detail);
 }
 
 class _AuthLocalizationsDelegate

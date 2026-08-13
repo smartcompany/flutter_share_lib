@@ -186,4 +186,100 @@ class AuthLocalizationsZh extends AuthLocalizations {
 
   @override
   String get pleaseEnterEmail => '请输入您的电子邮件。';
+
+  @override
+  String get photoSelectTitle => '选择照片';
+
+  @override
+  String get photoSelectDone => '完成';
+
+  @override
+  String photoSelectDoneCount(int count, int max) {
+    return '完成 ($count/$max)';
+  }
+
+  @override
+  String get photoPermissionDenied => '需要访问相册。';
+
+  @override
+  String get photoCompressFailed => '图片压缩失败。';
+
+  @override
+  String get photoCameraUnavailable => '无法使用相机。';
+
+  @override
+  String photoMaxSelection(int maxCount) {
+    return '最多可选择 $maxCount 张照片。';
+  }
+
+  @override
+  String get photoLoadFailed => '无法加载图片。';
+
+  @override
+  String get photoIcloudLoadFailed => '无法加载照片。请选择已保存在本机的照片，或在真机上重试。';
+
+  @override
+  String get photoLimitedAccessBanner =>
+      '仅显示已选择的照片。要使用完整图库，请再选择更多，或在设置中允许“所有照片”。';
+
+  @override
+  String get photoSelectMore => '再选择';
+
+  @override
+  String get shareSheetTitle => '分享';
+
+  @override
+  String get shareKakaoLabel => '用 KakaoTalk 分享';
+
+  @override
+  String get shareSystemLabel => '用其他应用分享';
+
+  @override
+  String get shareCopyLabel => '复制链接';
+
+  @override
+  String get shareCopiedMessage => '已复制链接';
+
+  @override
+  String get shareFailedMessage => '分享失败';
+
+  @override
+  String get shareOpenInApp => '在应用中打开';
+
+  @override
+  String get shareSubjectDefault => '分享';
+
+  @override
+  String get mapPickerTitle => '选择地图应用';
+
+  @override
+  String get mapNoAppsAvailable => '没有可用的地图应用。';
+
+  @override
+  String get mapKakao => 'Kakao Map';
+
+  @override
+  String get mapNaver => 'Naver Map';
+
+  @override
+  String get mapGoogle => 'Google 地图';
+
+  @override
+  String get mapApple => 'Apple 地图';
+
+  @override
+  String get forceUpdateTitle => '需要更新';
+
+  @override
+  String forceUpdateMessage(String current, String required) {
+    return '请更新到最新版本以继续使用。\n（当前 $current → 需要 $required）';
+  }
+
+  @override
+  String get forceUpdateButton => '前往更新';
+
+  @override
+  String errorOccurred(String detail) {
+    return '出错：$detail';
+  }
 }

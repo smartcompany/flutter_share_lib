@@ -195,4 +195,101 @@ class AuthLocalizationsKo extends AuthLocalizations {
 
   @override
   String get pleaseEnterEmail => '이메일을 입력해주세요.';
+
+  @override
+  String get photoSelectTitle => '사진 선택';
+
+  @override
+  String get photoSelectDone => '완료';
+
+  @override
+  String photoSelectDoneCount(int count, int max) {
+    return '완료 ($count/$max)';
+  }
+
+  @override
+  String get photoPermissionDenied => '앨범 접근 권한이 필요합니다';
+
+  @override
+  String get photoCompressFailed => '이미지 압축 실패';
+
+  @override
+  String get photoCameraUnavailable => '카메라를 사용할 수 없습니다';
+
+  @override
+  String photoMaxSelection(int maxCount) {
+    return '최대 $maxCount장까지 선택할 수 있습니다';
+  }
+
+  @override
+  String get photoLoadFailed => '이미지를 불러오지 못했습니다';
+
+  @override
+  String get photoIcloudLoadFailed =>
+      '사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.';
+
+  @override
+  String get photoLimitedAccessBanner =>
+      '선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.';
+
+  @override
+  String get photoSelectMore => '더 선택';
+
+  @override
+  String get shareSheetTitle => '공유하기';
+
+  @override
+  String get shareKakaoLabel => '카카오톡으로 공유';
+
+  @override
+  String get shareSystemLabel => '다른 앱으로 공유';
+
+  @override
+  String get shareCopyLabel => '링크 복사';
+
+  @override
+  String get shareCopiedMessage => '링크를 복사했어요';
+
+  @override
+  String get shareFailedMessage => '공유에 실패했어요';
+
+  @override
+  String get shareOpenInApp => '앱에서 열기';
+
+  @override
+  String get shareSubjectDefault => '공유';
+
+  @override
+  String get mapPickerTitle => '지도 앱 선택';
+
+  @override
+  String get mapNoAppsAvailable => '사용 가능한 지도 앱이 없습니다.';
+
+  @override
+  String get mapKakao => '카카오맵';
+
+  @override
+  String get mapNaver => '네이버 지도';
+
+  @override
+  String get mapGoogle => '구글 지도';
+
+  @override
+  String get mapApple => 'Apple 지도';
+
+  @override
+  String get forceUpdateTitle => '업데이트가 필요합니다';
+
+  @override
+  String forceUpdateMessage(String current, String required) {
+    return '계속 사용하려면 최신 버전으로 업데이트해 주세요.\n(현재 $current → 필요 $required)';
+  }
+
+  @override
+  String get forceUpdateButton => '업데이트하기';
+
+  @override
+  String errorOccurred(String detail) {
+    return '에러 발생: $detail';
+  }
 }

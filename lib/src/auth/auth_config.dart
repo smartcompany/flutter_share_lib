@@ -105,7 +105,7 @@ class AuthConfig {
       return _lookupAuthLocalizations(locale);
     } catch (e) {
       // Localizations 위젯이 없는 경우 기본값 반환 (한국어)
-      return _lookupAuthLocalizations(const Locale('ko', 'KR'));
+      return _lookupAuthLocalizations(const Locale('en'));
     }
   }
 

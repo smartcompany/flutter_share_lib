@@ -243,5 +243,56 @@
   "pleaseEnterEmail": "이메일을 입력해주세요.",
   "@pleaseEnterEmail": {
     "description": "이메일 입력 요청 메시지"
+  },
+  "photoSelectTitle": "사진 선택",
+  "photoSelectDone": "완료",
+  "photoSelectDoneCount": "완료 ({count}/{max})",
+  "@photoSelectDoneCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "photoPermissionDenied": "앨범 접근 권한이 필요합니다",
+  "photoCompressFailed": "이미지 압축 실패",
+  "photoCameraUnavailable": "카메라를 사용할 수 없습니다",
+  "photoMaxSelection": "최대 {maxCount}장까지 선택할 수 있습니다",
+  "@photoMaxSelection": {
+    "placeholders": {
+      "maxCount": {"type": "int"}
+    }
+  },
+  "photoLoadFailed": "이미지를 불러오지 못했습니다",
+  "photoIcloudLoadFailed": "사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.",
+  "photoLimitedAccessBanner": "선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.",
+  "photoSelectMore": "더 선택",
+  "shareSheetTitle": "공유하기",
+  "shareKakaoLabel": "카카오톡으로 공유",
+  "shareSystemLabel": "다른 앱으로 공유",
+  "shareCopyLabel": "링크 복사",
+  "shareCopiedMessage": "링크를 복사했어요",
+  "shareFailedMessage": "공유에 실패했어요",
+  "shareOpenInApp": "앱에서 열기",
+  "shareSubjectDefault": "공유",
+  "mapPickerTitle": "지도 앱 선택",
+  "mapNoAppsAvailable": "사용 가능한 지도 앱이 없습니다.",
+  "mapKakao": "카카오맵",
+  "mapNaver": "네이버 지도",
+  "mapGoogle": "구글 지도",
+  "mapApple": "Apple 지도",
+  "forceUpdateTitle": "업데이트가 필요합니다",
+  "forceUpdateMessage": "계속 사용하려면 최신 버전으로 업데이트해 주세요.\n(현재 {current} → 필요 {required})",
+  "@forceUpdateMessage": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "required": {"type": "String"}
+    }
+  },
+  "forceUpdateButton": "업데이트하기",
+  "errorOccurred": "에러 발생: {detail}",
+  "@errorOccurred": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
   }
 }

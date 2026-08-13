@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:share_lib/src/l10n_helper.dart';
+
 import 'force_update_service.dart';
 
 /// 앱 시작 시 서버 최소 버전을 확인하고, 필요하면 앱을 막는 게이트.
@@ -85,16 +87,15 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
       return widget.child;
     }
 
-    final locale = Localizations.maybeLocaleOf(context) ?? const Locale('en');
-    final title = widget.title ?? _defaultTitle(locale);
+    final l10n = shareLibL10n(context);
+    final title = widget.title ?? l10n.forceUpdateTitle;
     final message = widget.message ??
         _result!.message ??
-        _defaultMessage(
-          locale,
-          current: _result!.currentLabel,
-          required: _result!.requiredLabel ?? '',
+        l10n.forceUpdateMessage(
+          _result!.currentLabel,
+          _result!.requiredLabel ?? '',
         );
-    final buttonLabel = widget.buttonLabel ?? _defaultButton(locale);
+    final buttonLabel = widget.buttonLabel ?? l10n.forceUpdateButton;
 
     return PopScope(
       canPop: false,
@@ -153,52 +154,5 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
         ),
       ),
     );
-  }
-
-  static String _defaultTitle(Locale locale) {
-    switch (locale.languageCode) {
-      case 'ko':
-        return '업데이트가 필요합니다';
-      case 'ja':
-        return 'アップデートが必要です';
-      case 'zh':
-        return '需要更新';
-      default:
-        return 'Update required';
-    }
-  }
-
-  static String _defaultMessage(
-    Locale locale, {
-    required String current,
-    required String required,
-  }) {
-    switch (locale.languageCode) {
-      case 'ko':
-        return '계속 사용하려면 최신 버전으로 업데이트해 주세요.\n'
-            '(현재 $current → 필요 $required)';
-      case 'ja':
-        return 'アプリを使い続けるには最新版へのアップデートが必要です。\n'
-            '（現在 $current → 必要 $required）';
-      case 'zh':
-        return '请更新到最新版本以继续使用。\n'
-            '（当前 $current → 需要 $required）';
-      default:
-        return 'Please update to the latest version to continue.\n'
-            '(Current $current → Required $required)';
-    }
-  }
-
-  static String _defaultButton(Locale locale) {
-    switch (locale.languageCode) {
-      case 'ko':
-        return '업데이트하기';
-      case 'ja':
-        return 'アップデートする';
-      case 'zh':
-        return '前往更新';
-      default:
-        return 'Update now';
-    }
   }
 }

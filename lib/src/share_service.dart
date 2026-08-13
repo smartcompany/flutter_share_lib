@@ -395,7 +395,7 @@ class ShareService {
       await Share.shareXFiles(
         [xFile],
         text: imageOnly ? null : trimmedText,
-        subject: imageOnly ? null : (subject ?? '공유'),
+        subject: imageOnly ? null : subject,
         sharePositionOrigin: sharePositionOrigin,
       );
       debugPrint('✅ [기본 공유] 공유 완료');

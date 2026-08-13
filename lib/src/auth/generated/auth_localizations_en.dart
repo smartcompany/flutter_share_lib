@@ -202,4 +202,101 @@ class AuthLocalizationsEn extends AuthLocalizations {
 
   @override
   String get pleaseEnterEmail => 'Please enter your email.';
+
+  @override
+  String get photoSelectTitle => 'Select photos';
+
+  @override
+  String get photoSelectDone => 'Done';
+
+  @override
+  String photoSelectDoneCount(int count, int max) {
+    return 'Done ($count/$max)';
+  }
+
+  @override
+  String get photoPermissionDenied => 'Photo library access is required.';
+
+  @override
+  String get photoCompressFailed => 'Couldn\'t compress the image.';
+
+  @override
+  String get photoCameraUnavailable => 'Camera is unavailable.';
+
+  @override
+  String photoMaxSelection(int maxCount) {
+    return 'You can select up to $maxCount photos.';
+  }
+
+  @override
+  String get photoLoadFailed => 'Couldn\'t load the image.';
+
+  @override
+  String get photoIcloudLoadFailed =>
+      'Couldn\'t load the photo. Choose one saved on this device, or try again on a physical device.';
+
+  @override
+  String get photoLimitedAccessBanner =>
+      'Only selected photos are shown. To use your full library, select more or allow Full Access in Settings.';
+
+  @override
+  String get photoSelectMore => 'Select more';
+
+  @override
+  String get shareSheetTitle => 'Share';
+
+  @override
+  String get shareKakaoLabel => 'Share with KakaoTalk';
+
+  @override
+  String get shareSystemLabel => 'Share with another app';
+
+  @override
+  String get shareCopyLabel => 'Copy link';
+
+  @override
+  String get shareCopiedMessage => 'Link copied';
+
+  @override
+  String get shareFailedMessage => 'Couldn\'t share';
+
+  @override
+  String get shareOpenInApp => 'Open in app';
+
+  @override
+  String get shareSubjectDefault => 'Share';
+
+  @override
+  String get mapPickerTitle => 'Choose a maps app';
+
+  @override
+  String get mapNoAppsAvailable => 'No maps apps are available.';
+
+  @override
+  String get mapKakao => 'Kakao Map';
+
+  @override
+  String get mapNaver => 'Naver Map';
+
+  @override
+  String get mapGoogle => 'Google Maps';
+
+  @override
+  String get mapApple => 'Apple Maps';
+
+  @override
+  String get forceUpdateTitle => 'Update required';
+
+  @override
+  String forceUpdateMessage(String current, String required) {
+    return 'Please update to the latest version to continue.\n(Current $current → Required $required)';
+  }
+
+  @override
+  String get forceUpdateButton => 'Update now';
+
+  @override
+  String errorOccurred(String detail) {
+    return 'Error: $detail';
+  }
 }

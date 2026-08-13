@@ -10,6 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 
+import 'package:share_lib/src/l10n_helper.dart';
+
 /// 앨범 그리드 + 왼쪽 첫 칸 촬영 아이콘 스타일의 미디어 피커 서비스
 ///
 /// 사용 예시:
@@ -28,29 +30,34 @@ class MediaPickerService {
   ///
   /// [context] - 빌드 컨텍스트
   /// [maxCount] - 최대 선택 개수 (기본 9)
-  /// [permissionDeniedMessage] - 권한 거부 시 표시할 메시지
+  /// [permissionDeniedMessage] - 권한 거부 시 표시할 메시지 (null이면 로케일 기본값)
   /// [compress] - 압축 적용 여부 (기본 true)
   /// [maxWidth] - 압축 시 최대 너비 (기본 1280, Vercel 4.5MB 제한 대응)
   /// [maxHeight] - 압축 시 최대 높이 (기본 720)
   /// [quality] - 압축 품질 1~100 (기본 65)
-  /// [compressFailureMessage] - 압축 실패 시 표시할 메시지
+  /// [compressFailureMessage] - 압축 실패 시 표시할 메시지 (null이면 로케일 기본값)
   ///
   /// 반환: 선택/촬영된 이미지의 [XFile] 목록. 취소/압축 실패 시 null.
   static Future<List<XFile>?> pickImages(
     BuildContext context, {
     int maxCount = 9,
-    String permissionDeniedMessage = '앨범 접근 권한이 필요합니다',
+    String? permissionDeniedMessage,
     bool compress = true,
     int maxWidth = 1280,
     int maxHeight = 720,
     int quality = 65,
-    String compressFailureMessage = '이미지 압축 실패',
+    String? compressFailureMessage,
   }) async {
     debugPrint(
       '🔵 [MediaPickerService] pickImages start '
       'maxCount=$maxCount compress=$compress maxWidth=$maxWidth '
       'maxHeight=$maxHeight quality=$quality',
     );
+    final l10n = shareLibL10n(context);
+    final deniedMessage =
+        permissionDeniedMessage ?? l10n.photoPermissionDenied;
+    final compressFailedMessage =
+        compressFailureMessage ?? l10n.photoCompressFailed;
     // 이미지만 선택하므로 image 타입만 요청. 기본값(common)이면 이미지+동영상 권한을 모두 요구해
     // 사진만 허용한 경우에도 거부로 인식될 수 있음. hasAccess(authorized || limited)로 판단해
     // "일부만 허용" 상태에서도 피커를 연다.
@@ -70,7 +77,7 @@ class MediaPickerService {
       debugPrint('🟡 [MediaPickerService] permission denied');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(permissionDeniedMessage)),
+          SnackBar(content: Text(deniedMessage)),
         );
       }
       return null;
@@ -85,7 +92,7 @@ class MediaPickerService {
           maxWidth: maxWidth,
           maxHeight: maxHeight,
           quality: quality,
-          compressFailureMessage: compressFailureMessage,
+          compressFailureMessage: compressFailedMessage,
           isLimitedAccess: ps.isLimited,
         ),
       ),
@@ -316,7 +323,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
       debugPrint('❌ [MediaPickerService] 이미지 로드 실패: $e\n$st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지를 불러오지 못했습니다')),
+          SnackBar(content: Text(shareLibL10n(context).photoLoadFailed)),
         );
       }
       if (!mounted) return;
@@ -376,7 +383,7 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
       debugPrint('❌ [MediaPickerService] 카메라 촬영 실패: $e\n$st');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('카메라를 사용할 수 없습니다')),
+        SnackBar(content: Text(shareLibL10n(context).photoCameraUnavailable)),
       );
     }
   }
@@ -396,7 +403,11 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
 
     if (_selected.length >= widget.maxCount) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('최대 ${widget.maxCount}장까지 선택할 수 있습니다')),
+        SnackBar(
+          content: Text(
+            shareLibL10n(context).photoMaxSelection(widget.maxCount),
+          ),
+        ),
       );
       return;
     }
@@ -448,10 +459,8 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
         debugPrint('$st');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                '사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.',
-              ),
+            SnackBar(
+              content: Text(shareLibL10n(context).photoIcloudLoadFailed),
             ),
           );
         }
@@ -507,18 +516,22 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = shareLibL10n(context);
     return Stack(
       children: [
         Scaffold(
       appBar: AppBar(
-        title: const Text('사진 선택'),
+        title: Text(l10n.photoSelectTitle),
         actions: [
           TextButton(
             onPressed: (_selected.isEmpty || _isConfirming) ? null : _onConfirmPressed,
             child: Text(
               _selected.isEmpty
-                  ? '완료'
-                  : '완료 (${_selected.length}/${widget.maxCount})',
+                  ? l10n.photoSelectDone
+                  : l10n.photoSelectDoneCount(
+                      _selected.length,
+                      widget.maxCount,
+                    ),
               style: TextStyle(
                 color: _selected.isEmpty
                     ? Theme.of(context).disabledColor
@@ -541,13 +554,13 @@ class _ImagePickerPageState extends State<_ImagePickerPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        '선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.',
+                        l10n.photoLimitedAccessBanner,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                     TextButton(
                       onPressed: _openLimitedLibraryPicker,
-                      child: const Text('더 선택'),
+                      child: Text(l10n.photoSelectMore),
                     ),
                   ],
                 ),

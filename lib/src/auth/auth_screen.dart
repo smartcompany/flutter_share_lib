@@ -661,7 +661,11 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('에러 발생: $e'),
+                                    content: Text(
+                                      widget.config
+                                          .getLocalizations(context)
+                                          .errorOccurred('$e'),
+                                    ),
                                     duration: const Duration(seconds: 5),
                                   ),
                                 );
@@ -746,7 +750,11 @@ class _AuthScreenState<T> extends State<AuthScreen<T>> {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('에러 발생: $e'),
+                                    content: Text(
+                                      widget.config
+                                          .getLocalizations(context)
+                                          .errorOccurred('$e'),
+                                    ),
                                     duration: const Duration(seconds: 5),
                                   ),
                                 );

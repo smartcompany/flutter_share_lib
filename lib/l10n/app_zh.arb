@@ -83,5 +83,56 @@
   "send": "发送",
   "passwordResetTitle": "重置密码",
   "passwordResetMessage": "输入您的电子邮件地址，我们将向您发送密码重置链接。",
-  "pleaseEnterEmail": "请输入您的电子邮件。"
+  "pleaseEnterEmail": "请输入您的电子邮件。",
+  "photoSelectTitle": "选择照片",
+  "photoSelectDone": "完成",
+  "photoSelectDoneCount": "完成 ({count}/{max})",
+  "@photoSelectDoneCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "photoPermissionDenied": "需要访问相册。",
+  "photoCompressFailed": "图片压缩失败。",
+  "photoCameraUnavailable": "无法使用相机。",
+  "photoMaxSelection": "最多可选择 {maxCount} 张照片。",
+  "@photoMaxSelection": {
+    "placeholders": {
+      "maxCount": {"type": "int"}
+    }
+  },
+  "photoLoadFailed": "无法加载图片。",
+  "photoIcloudLoadFailed": "无法加载照片。请选择已保存在本机的照片，或在真机上重试。",
+  "photoLimitedAccessBanner": "仅显示已选择的照片。要使用完整图库，请再选择更多，或在设置中允许“所有照片”。",
+  "photoSelectMore": "再选择",
+  "shareSheetTitle": "分享",
+  "shareKakaoLabel": "用 KakaoTalk 分享",
+  "shareSystemLabel": "用其他应用分享",
+  "shareCopyLabel": "复制链接",
+  "shareCopiedMessage": "已复制链接",
+  "shareFailedMessage": "分享失败",
+  "shareOpenInApp": "在应用中打开",
+  "shareSubjectDefault": "分享",
+  "mapPickerTitle": "选择地图应用",
+  "mapNoAppsAvailable": "没有可用的地图应用。",
+  "mapKakao": "Kakao Map",
+  "mapNaver": "Naver Map",
+  "mapGoogle": "Google 地图",
+  "mapApple": "Apple 地图",
+  "forceUpdateTitle": "需要更新",
+  "forceUpdateMessage": "请更新到最新版本以继续使用。\n（当前 {current} → 需要 {required}）",
+  "@forceUpdateMessage": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "required": {"type": "String"}
+    }
+  },
+  "forceUpdateButton": "前往更新",
+  "errorOccurred": "出错：{detail}",
+  "@errorOccurred": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  }
 }

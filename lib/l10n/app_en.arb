@@ -83,5 +83,56 @@
   "send": "Send",
   "passwordResetTitle": "Reset Password",
   "passwordResetMessage": "Enter your email address and we'll send you a password reset link.",
-  "pleaseEnterEmail": "Please enter your email."
+  "pleaseEnterEmail": "Please enter your email.",
+  "photoSelectTitle": "Select photos",
+  "photoSelectDone": "Done",
+  "photoSelectDoneCount": "Done ({count}/{max})",
+  "@photoSelectDoneCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "photoPermissionDenied": "Photo library access is required.",
+  "photoCompressFailed": "Couldn't compress the image.",
+  "photoCameraUnavailable": "Camera is unavailable.",
+  "photoMaxSelection": "You can select up to {maxCount} photos.",
+  "@photoMaxSelection": {
+    "placeholders": {
+      "maxCount": {"type": "int"}
+    }
+  },
+  "photoLoadFailed": "Couldn't load the image.",
+  "photoIcloudLoadFailed": "Couldn't load the photo. Choose one saved on this device, or try again on a physical device.",
+  "photoLimitedAccessBanner": "Only selected photos are shown. To use your full library, select more or allow Full Access in Settings.",
+  "photoSelectMore": "Select more",
+  "shareSheetTitle": "Share",
+  "shareKakaoLabel": "Share with KakaoTalk",
+  "shareSystemLabel": "Share with another app",
+  "shareCopyLabel": "Copy link",
+  "shareCopiedMessage": "Link copied",
+  "shareFailedMessage": "Couldn't share",
+  "shareOpenInApp": "Open in app",
+  "shareSubjectDefault": "Share",
+  "mapPickerTitle": "Choose a maps app",
+  "mapNoAppsAvailable": "No maps apps are available.",
+  "mapKakao": "Kakao Map",
+  "mapNaver": "Naver Map",
+  "mapGoogle": "Google Maps",
+  "mapApple": "Apple Maps",
+  "forceUpdateTitle": "Update required",
+  "forceUpdateMessage": "Please update to the latest version to continue.\n(Current {current} → Required {required})",
+  "@forceUpdateMessage": {
+    "placeholders": {
+      "current": {"type": "String"},
+      "required": {"type": "String"}
+    }
+  },
+  "forceUpdateButton": "Update now",
+  "errorOccurred": "Error: {detail}",
+  "@errorOccurred": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  }
 }

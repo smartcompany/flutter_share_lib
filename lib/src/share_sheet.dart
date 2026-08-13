@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:share_lib/src/l10n_helper.dart';
+
 import 'share_service.dart';
 
 /// 카카오톡 / 시스템 공유 / 링크 복사 공용 바텀 시트
@@ -15,22 +17,32 @@ abstract final class ShareSheet {
   /// [shareText] 시스템 공유·복사에 쓰는 본문 (URL 포함 권장)
   /// [kakaoShareText] 카카오 말풍선 본문. null이면 [shareText]에서 URL을 뺀 텍스트 사용
   /// [linkUrl] 카카오 버튼/미리보기 링크 (Universal Link / applink)
-  /// [linkButtonTitle] 카카오 하단 버튼 문구
+  /// [linkButtonTitle] 카카오 하단 버튼 문구 (null이면 로케일 기본값)
   static Future<void> show({
     required BuildContext context,
     required String shareText,
     String? kakaoShareText,
     String? subject,
     Uri? linkUrl,
-    String linkButtonTitle = '앱에서 열기',
-    String title = '공유하기',
-    String kakaoLabel = '카카오톡으로 공유',
-    String systemLabel = '다른 앱으로 공유',
-    String copyLabel = '링크 복사',
-    String copiedMessage = '링크를 복사했어요',
-    String failedMessage = '공유에 실패했어요',
+    String? linkButtonTitle,
+    String? title,
+    String? kakaoLabel,
+    String? systemLabel,
+    String? copyLabel,
+    String? copiedMessage,
+    String? failedMessage,
     bool showCopy = true,
   }) async {
+    final l10n = shareLibL10n(context);
+    final resolvedTitle = title ?? l10n.shareSheetTitle;
+    final resolvedKakaoLabel = kakaoLabel ?? l10n.shareKakaoLabel;
+    final resolvedSystemLabel = systemLabel ?? l10n.shareSystemLabel;
+    final resolvedCopyLabel = copyLabel ?? l10n.shareCopyLabel;
+    final resolvedCopied = copiedMessage ?? l10n.shareCopiedMessage;
+    final resolvedFailed = failedMessage ?? l10n.shareFailedMessage;
+    final resolvedLinkButton = linkButtonTitle ?? l10n.shareOpenInApp;
+    final resolvedSubject = subject ?? l10n.shareSubjectDefault;
+
     final shareOrigin = shareOriginFromContext(context);
     final kakaoAvailable = await ShareService.isKakaoTalkAvailable();
     if (!context.mounted) return;
@@ -63,7 +75,7 @@ abstract final class ShareSheet {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(title, style: textTheme.titleMedium),
+                Text(resolvedTitle, style: textTheme.titleMedium),
                 const SizedBox(height: 8),
                 if (kakaoAvailable)
                   ListTile(
@@ -71,17 +83,17 @@ abstract final class ShareSheet {
                       Icons.chat_bubble_rounded,
                       color: colorScheme.tertiary,
                     ),
-                    title: Text(kakaoLabel, style: textTheme.titleMedium),
+                    title: Text(resolvedKakaoLabel, style: textTheme.titleMedium),
                     onTap: () async {
                       Navigator.of(ctx).pop();
                       await ShareService.shareToKakao(
                         resolvedKakaoText,
                         linkUrl: linkUrl,
-                        linkButtonTitle: linkButtonTitle,
+                        linkButtonTitle: resolvedLinkButton,
                         onError: (_) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(failedMessage)),
+                              SnackBar(content: Text(resolvedFailed)),
                             );
                           }
                         },
@@ -93,17 +105,17 @@ abstract final class ShareSheet {
                     Icons.share_outlined,
                     color: colorScheme.primary,
                   ),
-                  title: Text(systemLabel, style: textTheme.titleMedium),
+                  title: Text(resolvedSystemLabel, style: textTheme.titleMedium),
                   onTap: () async {
                     Navigator.of(ctx).pop();
                     final ok = await ShareService.shareText(
                       systemText,
-                      subject: subject,
+                      subject: resolvedSubject,
                       sharePositionOrigin: shareOrigin,
                     );
                     if (!ok && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(failedMessage)),
+                        SnackBar(content: Text(resolvedFailed)),
                       );
                     }
                   },
@@ -114,7 +126,7 @@ abstract final class ShareSheet {
                       Icons.copy_rounded,
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    title: Text(copyLabel, style: textTheme.titleMedium),
+                    title: Text(resolvedCopyLabel, style: textTheme.titleMedium),
                     onTap: () async {
                       Navigator.of(ctx).pop();
                       final ok = await ShareService.copyToClipboard(
@@ -123,7 +135,7 @@ abstract final class ShareSheet {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(ok ? copiedMessage : failedMessage),
+                          content: Text(ok ? resolvedCopied : resolvedFailed),
                         ),
                       );
                     },

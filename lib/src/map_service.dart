@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:share_lib/src/l10n_helper.dart';
+
 /// 지도 앱 선택 및 열기 서비스
 class MapService {
   /// 지도 앱 선택 다이얼로그 표시
@@ -10,18 +12,21 @@ class MapService {
     double? latitude,
     double? longitude,
   }) async {
+    final l10n = shareLibL10n(context);
     final availableApps = await _getAvailableMapApps(
       locationName: locationName,
       latitude: latitude,
       longitude: longitude,
+      kakaoName: l10n.mapKakao,
+      naverName: l10n.mapNaver,
+      googleName: l10n.mapGoogle,
+      appleName: l10n.mapApple,
     );
 
     if (availableApps.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('사용 가능한 지도 앱이 없습니다.'),
-          ),
+          SnackBar(content: Text(l10n.mapNoAppsAvailable)),
         );
       }
       return;
@@ -30,7 +35,7 @@ class MapService {
     if (context.mounted) {
       await showDialog(
         context: context,
-        builder: (context) => _MapAppPickerDialog(
+        builder: (dialogContext) => _MapAppPickerDialog(
           apps: availableApps,
           locationName: locationName,
           latitude: latitude,
@@ -45,10 +50,13 @@ class MapService {
     required String locationName,
     double? latitude,
     double? longitude,
+    required String kakaoName,
+    required String naverName,
+    required String googleName,
+    required String appleName,
   }) async {
     final apps = <MapApp>[];
 
-    // 카카오맵
     final kakaoMapUrl = _buildKakaoMapUrl(
       locationName: locationName,
       latitude: latitude,
@@ -56,14 +64,13 @@ class MapService {
     );
     if (await canLaunchUrl(kakaoMapUrl)) {
       apps.add(MapApp(
-        name: '카카오맵',
+        name: kakaoName,
         icon: Icons.map,
         color: Colors.yellow.shade700,
         url: kakaoMapUrl,
       ));
     }
 
-    // 네이버맵
     final naverMapUrl = _buildNaverMapUrl(
       locationName: locationName,
       latitude: latitude,
@@ -71,14 +78,13 @@ class MapService {
     );
     if (await canLaunchUrl(naverMapUrl)) {
       apps.add(MapApp(
-        name: '네이버 지도',
+        name: naverName,
         icon: Icons.map_outlined,
         color: Colors.green,
         url: naverMapUrl,
       ));
     }
 
-    // 구글맵
     final googleMapUrl = _buildGoogleMapUrl(
       locationName: locationName,
       latitude: latitude,
@@ -86,14 +92,13 @@ class MapService {
     );
     if (await canLaunchUrl(googleMapUrl)) {
       apps.add(MapApp(
-        name: '구글 지도',
+        name: googleName,
         icon: Icons.map,
         color: Colors.blue,
         url: googleMapUrl,
       ));
     }
 
-    // 애플맵 (iOS 기본 지도 앱) - 좌표가 없어도 장소명으로 검색 가능
     final appleMapUrl = _buildAppleMapUrl(
       locationName: locationName,
       latitude: latitude,
@@ -101,7 +106,7 @@ class MapService {
     );
     if (await canLaunchUrl(appleMapUrl)) {
       apps.add(MapApp(
-        name: 'Apple 지도',
+        name: appleName,
         icon: Icons.map,
         color: Colors.grey,
         url: appleMapUrl,
@@ -111,25 +116,21 @@ class MapService {
     return apps;
   }
 
-  /// 카카오맵 URL 생성
   static Uri _buildKakaoMapUrl({
     required String locationName,
     double? latitude,
     double? longitude,
   }) {
     if (latitude != null && longitude != null) {
-      // 좌표가 있으면 좌표로 검색
       return Uri.parse(
         'kakaomap://place?q=$locationName&x=$longitude&y=$latitude',
       );
-    } else {
-      // 좌표가 없으면 장소명으로 검색
-      return Uri.parse(
-          'kakaomap://search?q=${Uri.encodeComponent(locationName)}');
     }
+    return Uri.parse(
+      'kakaomap://search?q=${Uri.encodeComponent(locationName)}',
+    );
   }
 
-  /// 네이버맵 URL 생성
   static Uri _buildNaverMapUrl({
     required String locationName,
     double? latitude,
@@ -139,34 +140,25 @@ class MapService {
       return Uri.parse(
         'nmap://place?name=${Uri.encodeComponent(locationName)}&lat=$latitude&lng=$longitude',
       );
-    } else {
-      return Uri.parse(
-        'nmap://search?query=${Uri.encodeComponent(locationName)}',
-      );
     }
+    return Uri.parse(
+      'nmap://search?query=${Uri.encodeComponent(locationName)}',
+    );
   }
 
-  /// 구글맵 URL 생성
   static Uri _buildGoogleMapUrl({
     required String locationName,
     double? latitude,
     double? longitude,
   }) {
     if (latitude != null && longitude != null) {
-      // 좌표가 있으면 좌표 사용
       return Uri.parse('google.navigation:q=$latitude,$longitude');
-    } else {
-      // 좌표가 없으면 장소명으로 검색
-      return Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(locationName)}',
-      );
     }
+    return Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(locationName)}',
+    );
   }
 
-  /// Apple 지도 URL 생성
-  ///
-  /// - 좌표가 있으면 ll(위경도)와 q(장소명)를 함께 전달
-  /// - 좌표가 없으면 장소명만으로 검색
   static Uri _buildAppleMapUrl({
     required String locationName,
     double? latitude,
@@ -227,8 +219,9 @@ class _MapAppPickerDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = shareLibL10n(context);
     return AlertDialog(
-      title: const Text('지도 앱 선택'),
+      title: Text(l10n.mapPickerTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: apps.map((app) {
@@ -245,7 +238,7 @@ class _MapAppPickerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('취소'),
+          child: Text(l10n.cancel),
         ),
       ],
     );

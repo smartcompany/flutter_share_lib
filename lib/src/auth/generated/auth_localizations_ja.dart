@@ -195,4 +195,101 @@ class AuthLocalizationsJa extends AuthLocalizations {
 
   @override
   String get pleaseEnterEmail => 'メールアドレスを入力してください。';
+
+  @override
+  String get photoSelectTitle => '写真を選択';
+
+  @override
+  String get photoSelectDone => '完了';
+
+  @override
+  String photoSelectDoneCount(int count, int max) {
+    return '完了 ($count/$max)';
+  }
+
+  @override
+  String get photoPermissionDenied => 'フォトライブラリへのアクセスが必要です。';
+
+  @override
+  String get photoCompressFailed => '画像の圧縮に失敗しました。';
+
+  @override
+  String get photoCameraUnavailable => 'カメラを使用できません。';
+
+  @override
+  String photoMaxSelection(int maxCount) {
+    return '最大 $maxCount 枚まで選択できます。';
+  }
+
+  @override
+  String get photoLoadFailed => '画像を読み込めませんでした。';
+
+  @override
+  String get photoIcloudLoadFailed =>
+      '写真を読み込めませんでした。端末に保存された写真を選ぶか、実機でもう一度お試しください。';
+
+  @override
+  String get photoLimitedAccessBanner =>
+      '選択した写真のみ表示されます。ライブラリ全体を使うには、さらに選択するか設定で「すべての写真」を許可してください。';
+
+  @override
+  String get photoSelectMore => 'さらに選択';
+
+  @override
+  String get shareSheetTitle => '共有';
+
+  @override
+  String get shareKakaoLabel => 'カカオトークで共有';
+
+  @override
+  String get shareSystemLabel => 'ほかのアプリで共有';
+
+  @override
+  String get shareCopyLabel => 'リンクをコピー';
+
+  @override
+  String get shareCopiedMessage => 'リンクをコピーしました';
+
+  @override
+  String get shareFailedMessage => '共有に失敗しました';
+
+  @override
+  String get shareOpenInApp => 'アプリで開く';
+
+  @override
+  String get shareSubjectDefault => '共有';
+
+  @override
+  String get mapPickerTitle => 'マップアプリを選択';
+
+  @override
+  String get mapNoAppsAvailable => '利用できるマップアプリがありません。';
+
+  @override
+  String get mapKakao => 'カカオマップ';
+
+  @override
+  String get mapNaver => 'NAVERマップ';
+
+  @override
+  String get mapGoogle => 'Googleマップ';
+
+  @override
+  String get mapApple => 'Appleマップ';
+
+  @override
+  String get forceUpdateTitle => 'アップデートが必要です';
+
+  @override
+  String forceUpdateMessage(String current, String required) {
+    return 'アプリを使い続けるには最新版へのアップデートが必要です。\n（現在 $current → 必要 $required）';
+  }
+
+  @override
+  String get forceUpdateButton => 'アップデートする';
+
+  @override
+  String errorOccurred(String detail) {
+    return 'エラー: $detail';
+  }
 }
