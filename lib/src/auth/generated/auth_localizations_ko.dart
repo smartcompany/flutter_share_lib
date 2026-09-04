@@ -236,6 +236,12 @@ class AuthLocalizationsKo extends AuthLocalizations {
   String get photoSelectMore => '더 선택';
 
   @override
+  String get photoPickCamera => '사진 촬영';
+
+  @override
+  String get photoPickFromAlbum => '앨범에서 선택';
+
+  @override
   String get shareSheetTitle => '공유하기';
 
   @override

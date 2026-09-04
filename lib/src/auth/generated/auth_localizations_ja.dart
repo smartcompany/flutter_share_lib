@@ -236,6 +236,12 @@ class AuthLocalizationsJa extends AuthLocalizations {
   String get photoSelectMore => 'さらに選択';
 
   @override
+  String get photoPickCamera => '写真を撮る';
+
+  @override
+  String get photoPickFromAlbum => 'ライブラリから選択';
+
+  @override
   String get shareSheetTitle => '共有';
 
   @override

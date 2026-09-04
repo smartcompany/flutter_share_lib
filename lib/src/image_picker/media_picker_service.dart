@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data' as typed_data;
 
 import 'package:cross_file/cross_file.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +12,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import 'package:share_lib/src/l10n_helper.dart';
+
+/// Android only: skip the camera/album chooser and open the system picker directly.
+enum MediaPickAndroidSource { album, camera }
 
 /// 앨범 그리드 + 왼쪽 첫 칸 촬영 아이콘 스타일의 미디어 피커 서비스
 ///
@@ -24,20 +28,8 @@ import 'package:share_lib/src/l10n_helper.dart';
 class MediaPickerService {
   MediaPickerService._();
 
-  /// 앨범에서 이미지를 선택하거나 촬영 아이콘을 통해 카메라로 촬영합니다.
-  /// 앨범 그리드 왼쪽 첫 칸에 촬영 아이콘이 표시됩니다.
-  /// 기본적으로 이미지를 압축하여 반환합니다 (Vercel 4.5MB 제한 등 대응).
-  ///
-  /// [context] - 빌드 컨텍스트
-  /// [maxCount] - 최대 선택 개수 (기본 9)
-  /// [permissionDeniedMessage] - 권한 거부 시 표시할 메시지 (null이면 로케일 기본값)
-  /// [compress] - 압축 적용 여부 (기본 true)
-  /// [maxWidth] - 압축 시 최대 너비 (기본 1280, Vercel 4.5MB 제한 대응)
-  /// [maxHeight] - 압축 시 최대 높이 (기본 720)
-  /// [quality] - 압축 품질 1~100 (기본 65)
-  /// [compressFailureMessage] - 압축 실패 시 표시할 메시지 (null이면 로케일 기본값)
-  ///
-  /// 반환: 선택/촬영된 이미지의 [XFile] 목록. 취소/압축 실패 시 null.
+  /// Android: system Photo Picker / camera ([ImagePicker]) — no READ_MEDIA_* permissions.
+  /// iOS: in-app album grid ([PhotoManager]).
   static Future<List<XFile>?> pickImages(
     BuildContext context, {
     int maxCount = 9,
@@ -47,12 +39,134 @@ class MediaPickerService {
     int maxHeight = 720,
     int quality = 65,
     String? compressFailureMessage,
+    /// When set on Android, opens album or camera directly (no chooser sheet).
+    MediaPickAndroidSource? androidSource,
   }) async {
     debugPrint(
       '🔵 [MediaPickerService] pickImages start '
       'maxCount=$maxCount compress=$compress maxWidth=$maxWidth '
       'maxHeight=$maxHeight quality=$quality',
     );
+    if (!kIsWeb && Platform.isAndroid) {
+      return _pickImagesAndroid(
+        context,
+        maxCount: maxCount,
+        compress: compress,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        quality: quality,
+        compressFailureMessage: compressFailureMessage,
+        androidSource: androidSource,
+      );
+    }
+    return _pickImagesWithPhotoManager(
+      context,
+      maxCount: maxCount,
+      permissionDeniedMessage: permissionDeniedMessage,
+      compress: compress,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      quality: quality,
+      compressFailureMessage: compressFailureMessage,
+    );
+  }
+
+  static Future<List<XFile>?> _pickImagesAndroid(
+    BuildContext context, {
+    required int maxCount,
+    required bool compress,
+    required int maxWidth,
+    required int maxHeight,
+    required int quality,
+    String? compressFailureMessage,
+    MediaPickAndroidSource? androidSource,
+  }) async {
+    final l10n = shareLibL10n(context);
+    final compressFailedMessage =
+        compressFailureMessage ?? l10n.photoCompressFailed;
+
+    _AndroidPickSource? source;
+    if (androidSource == MediaPickAndroidSource.album) {
+      source = _AndroidPickSource.album;
+    } else if (androidSource == MediaPickAndroidSource.camera) {
+      source = _AndroidPickSource.camera;
+    } else {
+      source = await showModalBottomSheet<_AndroidPickSource>(
+        context: context,
+        builder: (sheetContext) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_enhance),
+                  title: Text(l10n.photoPickCamera),
+                  onTap: () =>
+                      Navigator.of(sheetContext).pop(_AndroidPickSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: Text(l10n.photoPickFromAlbum),
+                  onTap: () =>
+                      Navigator.of(sheetContext).pop(_AndroidPickSource.album),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+    if (source == null || !context.mounted) {
+      debugPrint('🟡 [MediaPickerService] Android pick cancelled');
+      return null;
+    }
+
+    final picker = ImagePicker();
+    List<XFile> picked;
+    try {
+      if (source == _AndroidPickSource.camera) {
+        final file = await picker.pickImage(source: ImageSource.camera);
+        if (file == null) return null;
+        picked = [file];
+      } else if (maxCount <= 1) {
+        final file = await picker.pickImage(source: ImageSource.gallery);
+        if (file == null) return null;
+        picked = [file];
+      } else {
+        picked = await picker.pickMultiImage(limit: maxCount);
+        if (picked.isEmpty) return null;
+      }
+    } catch (error, stackTrace) {
+      debugPrint('❌ [MediaPickerService] Android pick failed: $error\n$stackTrace');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.photoCameraUnavailable)),
+        );
+      }
+      return null;
+    }
+
+    return _finalizePickedFiles(
+      context,
+      picked,
+      compress: compress,
+      maxWidth: maxWidth,
+      maxHeight: maxHeight,
+      quality: quality,
+      compressFailureMessage: compressFailedMessage,
+    );
+  }
+
+  static Future<List<XFile>?> _pickImagesWithPhotoManager(
+    BuildContext context, {
+    required int maxCount,
+    String? permissionDeniedMessage,
+    required bool compress,
+    required int maxWidth,
+    required int maxHeight,
+    required int quality,
+    String? compressFailureMessage,
+  }) async {
     final l10n = shareLibL10n(context);
     final deniedMessage =
         permissionDeniedMessage ?? l10n.photoPermissionDenied;
@@ -103,7 +217,46 @@ class MediaPickerService {
 
     return files;
   }
+
+  static Future<List<XFile>?> _finalizePickedFiles(
+    BuildContext context,
+    List<XFile> picked, {
+    required bool compress,
+    required int maxWidth,
+    required int maxHeight,
+    required int quality,
+    required String compressFailureMessage,
+  }) async {
+    if (!compress) return picked;
+
+    final dir = await getTemporaryDirectory();
+    final List<XFile> files = [];
+    for (var index = 0; index < picked.length; index++) {
+      final targetPath =
+          '${dir.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$index.jpg';
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        picked[index].path,
+        targetPath,
+        quality: quality,
+        minWidth: maxWidth,
+        minHeight: maxHeight,
+      );
+      if (compressed == null) {
+        debugPrint('❌ [MediaPickerService] compress failed index=$index');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(compressFailureMessage)),
+          );
+        }
+        return null;
+      }
+      files.add(XFile(compressed.path));
+    }
+    return files;
+  }
 }
+
+enum _AndroidPickSource { camera, album }
 
 class _ImagePickerPage extends StatefulWidget {
   const _ImagePickerPage({

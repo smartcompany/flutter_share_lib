@@ -106,6 +106,8 @@
   "photoIcloudLoadFailed": "Couldn't load the photo. Choose one saved on this device, or try again on a physical device.",
   "photoLimitedAccessBanner": "Only selected photos are shown. To use your full library, select more or allow Full Access in Settings.",
   "photoSelectMore": "Select more",
+  "photoPickCamera": "Take photo",
+  "photoPickFromAlbum": "Choose from library",
   "shareSheetTitle": "Share",
   "shareKakaoLabel": "Share with KakaoTalk",
   "shareSystemLabel": "Share with another app",

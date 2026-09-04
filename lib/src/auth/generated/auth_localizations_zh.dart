@@ -226,6 +226,12 @@ class AuthLocalizationsZh extends AuthLocalizations {
   String get photoSelectMore => '再选择';
 
   @override
+  String get photoPickCamera => '拍照';
+
+  @override
+  String get photoPickFromAlbum => '从相册选择';
+
+  @override
   String get shareSheetTitle => '分享';
 
   @override

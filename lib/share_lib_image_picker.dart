@@ -17,7 +17,7 @@
 ///
 /// iOS/Android 권한 설정:
 /// - iOS: Info.plist에 NSPhotoLibraryUsageDescription, NSCameraUsageDescription
-/// - Android: AndroidManifest에 READ_EXTERNAL_STORAGE, READ_MEDIA_IMAGES, CAMERA
+/// - Android: CAMERA만 선언. 앨범은 시스템 Photo Picker 사용 (READ_MEDIA_IMAGES 불필요)
 library share_lib_image_picker;
 
 export 'package:cross_file/cross_file.dart' show XFile;

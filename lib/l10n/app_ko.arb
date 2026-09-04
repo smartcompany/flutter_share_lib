@@ -266,6 +266,8 @@
   "photoIcloudLoadFailed": "사진을 불러오지 못했습니다. 기기에 저장된 사진을 선택하거나 실기기에서 다시 시도해 주세요.",
   "photoLimitedAccessBanner": "선택한 사진만 표시됩니다. 보관함 전체를 쓰려면 더 선택하거나 설정에서 「모든 사진」 허용을 선택하세요.",
   "photoSelectMore": "더 선택",
+  "photoPickCamera": "사진 촬영",
+  "photoPickFromAlbum": "앨범에서 선택",
   "shareSheetTitle": "공유하기",
   "shareKakaoLabel": "카카오톡으로 공유",
   "shareSystemLabel": "다른 앱으로 공유",

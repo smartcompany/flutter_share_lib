@@ -106,6 +106,8 @@
   "photoIcloudLoadFailed": "写真を読み込めませんでした。端末に保存された写真を選ぶか、実機でもう一度お試しください。",
   "photoLimitedAccessBanner": "選択した写真のみ表示されます。ライブラリ全体を使うには、さらに選択するか設定で「すべての写真」を許可してください。",
   "photoSelectMore": "さらに選択",
+  "photoPickCamera": "写真を撮る",
+  "photoPickFromAlbum": "ライブラリから選択",
   "shareSheetTitle": "共有",
   "shareKakaoLabel": "カカオトークで共有",
   "shareSystemLabel": "ほかのアプリで共有",

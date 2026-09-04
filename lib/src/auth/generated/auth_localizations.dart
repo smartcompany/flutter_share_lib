@@ -504,6 +504,18 @@ abstract class AuthLocalizations {
   /// **'더 선택'**
   String get photoSelectMore;
 
+  /// No description provided for @photoPickCamera.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 촬영'**
+  String get photoPickCamera;
+
+  /// No description provided for @photoPickFromAlbum.
+  ///
+  /// In ko, this message translates to:
+  /// **'앨범에서 선택'**
+  String get photoPickFromAlbum;
+
   /// No description provided for @shareSheetTitle.
   ///
   /// In ko, this message translates to:

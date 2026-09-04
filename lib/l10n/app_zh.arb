@@ -106,6 +106,8 @@
   "photoIcloudLoadFailed": "无法加载照片。请选择已保存在本机的照片，或在真机上重试。",
   "photoLimitedAccessBanner": "仅显示已选择的照片。要使用完整图库，请再选择更多，或在设置中允许“所有照片”。",
   "photoSelectMore": "再选择",
+  "photoPickCamera": "拍照",
+  "photoPickFromAlbum": "从相册选择",
   "shareSheetTitle": "分享",
   "shareKakaoLabel": "用 KakaoTalk 分享",
   "shareSystemLabel": "用其他应用分享",

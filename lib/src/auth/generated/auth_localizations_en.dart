@@ -243,6 +243,12 @@ class AuthLocalizationsEn extends AuthLocalizations {
   String get photoSelectMore => 'Select more';
 
   @override
+  String get photoPickCamera => 'Take photo';
+
+  @override
+  String get photoPickFromAlbum => 'Choose from library';
+
+  @override
   String get shareSheetTitle => 'Share';
 
   @override
